@@ -366,6 +366,50 @@ longer waits on anything that can silently never resolve), and `acceptDownloads:
 still depends on it. Re-verified locally in a single full run across chromium, firefox, and webkit (one
 real order per browser): all three passed (max 21.2s, well under the 45s budget).
 
+**Follow-up (third round, real CI):** the response-capture fix above is now **CONFIRMED WORKING** —
+a subsequent real CI run showed zero errors anywhere in the download/invoice-fetch portion of this
+test, on every browser. That same run surfaced a *different*, later, deterministic failure (identical
+on both original and retry1, i.e. confirmed non-flaky) at the plan's step 5 final assertion: "the page
+URL remains unchanged at `/payment_done/{n}` after the click — no navigation occurs from downloading
+the invoice." On WebKit specifically, clicking "Download Invoice" (`a[href^="/download_invoice"]`,
+confirmed to carry no HTML5 `download` attribute — it relies entirely on the server's
+`Content-Disposition: attachment` response header to divert the click into a download rather than a
+navigation) actually navigates the page to `/download_invoice/{n}`, rather than the navigation being
+suppressed as it is on chromium/firefox. This was never seen during this chunk's original local
+verification because the local WebKit build (Windows) does not share this behavior — only the Linux
+WebKit build used in real CI does; this is now confirmed a genuine, deterministic, browser-specific
+behavior difference, not a timing/mechanism issue and not something a capture-mechanism trick can paper
+over, since the underlying premise (no navigation occurs) is simply false on that browser.
+
+**Corrected assertion — revised once more after local re-verification below:** an initial fix branched
+on `test.info().project.name === 'webkit'` and asserted the navigated-to-`/download_invoice/{id}`
+outcome unconditionally for that project. That fix immediately failed on this machine's own local
+webkit run — with the exact opposite outcome (`/payment_done/{id}`, no navigation) — confirming what
+the CI-only failure already implied: the divergence tracks the WebKit *build* (Linux CI vs. local
+Windows), not the "webkit" project name itself, so a single hardcoded expectation for that project is
+wrong on at least one of the two builds. The assertion was corrected again to accept **either**
+confirmed-valid outcome on the webkit project (`/payment_done/{id}` OR `/download_invoice/{id}`) rather
+than asserting one unconditionally, then — only if the navigated-away outcome occurred — recovers via
+`checkoutPage.goto('/payment_done/{orderId}')` before continuing into the shared "Continue" / Delete
+Account steps, so the rest of the flow runs identically regardless of which outcome occurred. On
+chromium/firefox the original "stays on `/payment_done/{orderId}`" assertion is unchanged, since it
+still holds unconditionally there. The invoice content assertion itself (`fetchInvoiceText()`, a plain
+`page.request` call against the same URL/session) is unaffected by whether the page itself navigated,
+so it continues to run and assert identically on all three browsers regardless of this branch.
+Re-verified with a single targeted webkit-only run (one real order, per this project's live-site volume
+discipline) — green, exercising the "stayed on `/payment_done/{id}`" branch on this machine's (Windows)
+WebKit build, with the "navigated to `/download_invoice/{id}`" branch confirmed correct by construction
+from the real CI failure output rather than re-triggered locally (this machine's WebKit build cannot
+produce it) — plus a chromium sanity check since the changed code path is shared: also green.
+
+A brief, appropriately-hedged note for future reference: forcing an HTML5 `download` attribute
+client-side on this link (a one-line addition the site itself doesn't make) would very likely make this
+navigate-vs-download behavior deterministic across all browsers regardless of how each one currently
+interprets the `Content-Disposition` header — noted here as a plausible root cause explanation, not
+escalated to `README.md`, since this project doesn't control automationexercise.com's markup and the
+current test-side handling is a normal, low-risk cross-browser behavior difference rather than a
+mislabeled/broken/invalid-HTML site defect.
+
 Fully planned separately: see `specs/checkout.plan.md`.
 
 ## 10. Next Steps
