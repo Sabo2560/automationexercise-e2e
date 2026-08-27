@@ -4,10 +4,24 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  schedule:
+    # Weekly, Sunday 03:17 UTC — covers the mutating suite (Account/Cart/Checkout)
+    # without hitting the live site on every push/PR.
+    - cron: '17 3 * * 0'
+  workflow_dispatch:
+
 jobs:
-  test:
+  # Home, Products, and API tests are read-only against the live site (no account
+  # creation, no cart/orders) — safe to run on every push/PR. Full cross-browser
+  # matrix on push (or schedule/manual dispatch); chromium-only on PR for fast
+  # feedback without tripling live-site traffic on every review iteration.
+  read-only-suite:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: ${{ github.event_name == 'pull_request' && fromJson('["chromium"]') || fromJson('["chromium","firefox","webkit"]') }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -16,12 +30,41 @@ jobs:
     - name: Install dependencies
       run: npm ci
     - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
-    - name: Run Playwright tests
-      run: npx playwright test
+      run: npx playwright install --with-deps ${{ matrix.browser }}
+    - name: Run read-only suite (Home, Products, API)
+      run: npx playwright test tests/home tests/products tests/api --project=${{ matrix.browser }}
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
-        name: playwright-report
+        name: playwright-report-read-only-${{ matrix.browser }}
+        path: playwright-report/
+        retention-days: 30
+
+  # Account/Cart/Checkout create real accounts and place real orders against the
+  # live site. Never run these on push/PR — only on the weekly schedule or an
+  # explicit manual dispatch, to keep live-site volume to a minimum.
+  mutating-suite:
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    - name: Install dependencies
+      run: npm ci
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps ${{ matrix.browser }}
+    - name: Run mutating suite (Account, Cart, Checkout)
+      run: npx playwright test tests/account tests/cart tests/checkout --project=${{ matrix.browser }}
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-report-mutating-${{ matrix.browser }}
         path: playwright-report/
         retention-days: 30
