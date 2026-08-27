@@ -37,7 +37,7 @@ Heal → Docs Sync).
 | 3 | Product Catalog & Search | `/products`, `/product_details/{id}`, `/brand_products/{brand}` | **Implemented** |
 | 4 | Cart | `/view_cart` | **Implemented** |
 | 5 | Checkout / Orders | `/view_cart` → `/login` → `/payment` → order confirmation | **Implemented** |
-| 6 | Contact Us | `/contact_us` | Not yet planned |
+| 6 | Contact Us | `/contact_us` | **Implemented** |
 | 7 | Informational Pages (Test Cases, API Testing) | `/test_cases`, `/api_list` | Not yet planned |
 | 8 | API Test Track | `/api/*` (REST, no browser) | **Implemented** |
 | 9 | Cross-Page Navigation | all of the above | Not yet planned |
@@ -104,13 +104,13 @@ non-transactional, or purely informational feature.
 | P0 — Critical | Cart | Sits directly between browsing and checkout; broken cart state blocks all purchases. |
 | P0 — Critical | Checkout / Orders | Core business transaction of the site; highest business impact if broken, but can only be planned once Account and Cart are stable (its Page Object composes both). |
 | P1 — High | API Test Track | Fast, stable, high-value regression signal for the same core entities (products, brands, accounts) at a layer decoupled from UI flakiness; cheap to extend incrementally. **Done.** |
-| P2 — Medium | Contact Us | Self-contained lead-gen form; not on the purchase critical path. |
+| P2 — Medium | Contact Us | Self-contained lead-gen form; not on the purchase critical path. **Done.** |
 | P2 — Medium | Cross-Page Navigation | Valuable regression net once individual chunks exist, but by definition can't be built first and duplicates some coverage already in per-chunk plans. |
 | P3 — Low | Informational Pages | Static documentation content; smoke-level checks only, no transactional risk. |
 
 **Recommended build order:** Home (done) → Account/Auth (done) → Product Catalog & Search (done) →
 Cart (done) → Checkout/Orders (done) → API Test Track (done, ran in parallel with no ordering
-dependency) → Contact Us → Cross-Page Navigation → Informational Pages.
+dependency) → Contact Us (done) → Cross-Page Navigation → Informational Pages.
 
 ## 4. Shared Technical Conventions
 
@@ -415,6 +415,43 @@ mislabeled/broken/invalid-HTML site defect.
 
 Fully planned separately: see `specs/checkout.plan.md`.
 
+## 10. Contact Us — Implemented
+
+**Status:** Fully planned (`specs/contact.plan.md`, 4 scenarios, P2/P3) and implemented across two
+spec files under `tests/ui/contact/` (`contact-submit.spec.ts`, `contact-validation.spec.ts` — 4
+tests total). Confirmed passing across chromium, firefox, and webkit (12/12 in a full run across all
+three projects).
+
+Notable quirks captured during this chunk (relevant to conventions above): a new
+`tests/pages/ContactUsPage.ts` was added, extending `BasePage`. All five requested `data-qa` values
+were confirmed live on every field except the file upload input (`name="upload_file"`, no `data-qa`
+attribute at all — scoped instead via `input[type="file"]` under `#contact-us-form`), consistent with
+the project convention of checking attribute coverage per page rather than assuming it. Email is the
+only required field (and the only one with `type="email"`); Name/Subject/Message carry no
+required/maxlength/minlength constraints. Clicking Submit on a form that already passes client-side
+validation triggers a native `window.confirm()` dialog reading exactly "Press OK to proceed!" *before*
+the real POST fires — every scenario that reaches this point registers a dialog handler first, since an
+unhandled dialog hangs the test indefinitely. A verification-time defect was caught and healed: the
+`.status.alert.alert-success` success-alert div is present in the DOM at all times (hidden via inline
+`style="display: none"`), never inserted/removed — the two scenarios that never submit (empty-required-
+field block, dialog-decline) initially asserted its absence via `toHaveCount(0)`, which failed
+deterministically (not flakily) on all three browsers; corrected to assert non-visibility
+(`not.toBeVisible()`) instead, which is the only assertion this project's convention endorses for an
+element whose hidden-vs-visible state — not DOM presence — is what actually changes. On a real accepted
+submission, `#contact-us-form` is fully replaced (not merely hidden) by the success alert (exact text
+"Success! Your details have been submitted successfully.") and a "Home" link (`href="/"`). Declining the
+confirm() dialog leaves the form and its entered values completely unchanged. Exactly ONE scenario (the
+happy path) performs a real, accepted submission against the live site — the other three scenarios
+(required-field block, invalid-email-format block, dialog-decline) are all confirmed to never reach the
+backend, consistent with this project's live-site volume discipline. The file-upload field uses a
+dedicated, trivial fixture (`tests/fixtures/contact-upload.txt`, a one-line placeholder with no
+personal/sensitive content) rather than any arbitrary local file, per this project's file-upload
+guardrail. A cleanup pass added `ContactUsPage.captureDialogMessages()`, a shared dialog-message-capture
+helper, once the identical raw `page.once('dialog', ...)` capture pattern turned up duplicated across
+both spec files.
+
+Fully planned separately: see `specs/contact.plan.md`.
+
 ## 11. API Test Track — Implemented
 
 **Status:** Fully planned (`specs/api.plan.md`, 10 scenarios, P0–P2) and implemented across five spec
@@ -453,7 +490,8 @@ Fully planned separately: see `specs/api.plan.md`.
 ## 12. Next Steps
 
 This document defines scope and order only — no further test code is generated as part of this pass.
-Per the recommended build order in §3, the next chunk to plan is **Contact Us**
-(`specs/contact.plan.md` or similar), since it has no dependency on any other chunk and every
-higher-priority chunk (all of P0 plus the API Test Track) is now implemented. **Cross-Page Navigation**
-and **Informational Pages** remain after that, in the order given in §3.
+Per the recommended build order in §3, all P0 and P1 chunks plus **Contact Us** (P2) are now
+implemented. The next chunk to plan is **Cross-Page Navigation** (`specs/cross-navigation.plan.md` or
+similar), since every chunk's Page Object it needs to reuse (Home, Account/Auth, Products, Cart,
+Checkout, Contact Us) now exists. **Informational Pages** (Test Cases, API Testing) remains after that,
+per the priority order in §3.
