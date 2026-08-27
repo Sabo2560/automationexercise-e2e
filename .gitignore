@@ -1,0 +1,28 @@
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Claude Code local tooling (playwright agents/prompts/skills, MCP config)
+.claude/
+.mcp.json
+.playwright-mcp/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+npm-debug.log*
+yarn-error.log*
