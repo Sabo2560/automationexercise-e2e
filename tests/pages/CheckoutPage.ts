@@ -1,4 +1,4 @@
-import { type Page, type Locator, type Download } from '@playwright/test';
+import { type Page, type Locator, type Response } from '@playwright/test';
 import { BasePage } from './BasePage';
 import type { CartPage } from './CartPage';
 import type { LoginPage } from './LoginPage';
@@ -191,24 +191,42 @@ export class CheckoutPage extends BasePage {
   }
 
   /**
-   * Click "Download Invoice" and return the resulting Playwright Download object.
+   * Click "Download Invoice" and return the underlying 'GET /download_invoice/{orderId}' network
+   * Response — status/headers only, see `fetchInvoiceText` for the body — rather than waiting on
+   * Playwright's native 'download' browser event.
    *
-   * An explicit, generous timeout is set on the 'download' event wait (rather than relying on the
-   * ambient default, which is otherwise capped by however much of the test's own timeout budget is
-   * left): confirmed via CI investigation, headless WebKit on Linux CI runners has been observed to
-   * take noticeably longer than Chromium/Firefox to fire the native download event for the exact
-   * same 'content-disposition: attachment' server response, occasionally missing the default 30s
-   * test timeout once the preceding signup/cart/checkout/payment steps have already used part of
-   * that budget — a CI-environment timing characteristic, not a site behavior difference (see
-   * specs/test-plan.md's Checkout/Orders section). Pair with the caller also raising the test's own
-   * timeout for this step (test.setTimeout), since a call-level timeout alone cannot outlast the
-   * enclosing test's overall budget.
+   * This deliberately does NOT use `page.waitForEvent('download')`. Confirmed via two real GitHub
+   * Actions (Ubuntu) CI runs — with the 'download' wait already raised to a generous 45s timeout —
+   * the native download event never fired even once across both attempts (original + retry), while
+   * the exact same interaction works locally on Windows/WebKit. This rules out a timing/slowness
+   * explanation: it is headless WebKit's Linux build genuinely not firing the browser
+   * download-manager event for this interaction, a known gap area rather than something a longer
+   * timeout can fix (see specs/test-plan.md's Checkout/Orders section).
    */
-  async downloadInvoice(): Promise<Download> {
-    const [download] = await Promise.all([
-      this.page.waitForEvent('download', { timeout: 45_000 }),
+  async downloadInvoice(orderId: number): Promise<Response> {
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => new URL(res.url()).pathname === `/download_invoice/${orderId}`),
       this.downloadInvoiceLink.click(),
     ]);
-    return download;
+    return response;
+  }
+
+  /**
+   * Independently re-fetch the same '/download_invoice/{orderId}' endpoint's full text body via
+   * `page.request` (an `APIRequestContext` that shares the page's authenticated session cookies),
+   * rather than reading the body off the click-triggered Response returned by `downloadInvoice`.
+   *
+   * Confirmed via this project's own local cross-browser verification: once a response is
+   * classified by the browser as a download, its body becomes unreadable via the normal Response
+   * object on more than just WebKit — chromium throws immediately ("Response body is not available
+   * for a response that was navigated away from"), webkit hangs until the test timeout, and only
+   * firefox happened to still expose it. This is a general Playwright/CDP limitation for
+   * download-triggering responses, not a single-browser quirk, so status/headers are read from the
+   * real UI-triggered response (above) while the body is read from a plain, never-diverted API
+   * request against the exact same URL and session — reliable identically on all three browsers.
+   */
+  async fetchInvoiceText(orderId: number): Promise<string> {
+    const response = await this.page.request.get(`/download_invoice/${orderId}`);
+    return (await response.text()).trim();
   }
 }

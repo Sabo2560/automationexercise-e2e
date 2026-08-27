@@ -32,8 +32,12 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
 
-    /* Explicit rather than relied-upon-as-default: the Checkout/Orders chunk's invoice download
-     * (CheckoutPage.downloadInvoice()) depends on this being true on every browser/project. */
+    /* Kept explicit as a defensive default for the Checkout/Orders chunk's invoice-download click
+     * (CheckoutPage.downloadInvoice()), even though that step now asserts on the underlying network
+     * response directly rather than a browser 'download' event (see specs/test-plan.md's
+     * Checkout/Orders section: the native event was confirmed via CI to never fire on Linux WebKit
+     * for this interaction) -- true avoids any browser-specific handling of the triggered download
+     * getting in the way of the click/response itself. */
     acceptDownloads: true,
   },
 

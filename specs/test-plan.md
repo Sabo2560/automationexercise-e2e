@@ -334,24 +334,37 @@ cross-browser `innerText`/CSS-`text-transform` rendering difference, not a site 
 now case-insensitive.
 
 A CI-only (GitHub Actions, Ubuntu headless) failure surfaced after this chunk's original local
-verification, distinct from the two above: `checkout-happy-path.spec.ts`'s invoice-download step
-(`CheckoutPage.downloadInvoice()`) hit the test's default 30s timeout on WebKit only, twice
-(original + retry), while chromium/firefox and the rest of the suite passed (104/105). Investigation
-confirmed this is a CI-environment timing characteristic, not a site regression: chromium and firefox
-both received a real, correctly-content-verified download for the same order in the same run, so the
-server-side `/download_invoice/{id}` response itself is not implicated. Headless WebKit on Linux CI
-runners has been observed to take noticeably longer than chromium/firefox to fire Playwright's native
-`download` event for the same `content-disposition: attachment` response — compounded by this being a
-single long test (signup → cart → checkout → payment → invoice download → cleanup) that had already
-spent part of its 30s budget by the time it reached this step. Fixed by giving
-`CheckoutPage.downloadInvoice()`'s `waitForEvent('download')` call an explicit 45s timeout and raising
-this one test's own timeout to 60s via `test.setTimeout()` (not `playwright.config.ts`'s global
-timeout, since no other test in this chunk needs it), plus making `acceptDownloads: true` explicit in
-`playwright.config.ts` rather than relying on the Playwright default. Re-verified locally on the
-`webkit` project (passed, ~17s total, well within the new budget) — noted for future maintainers that
-a local Windows pass does not fully prove the Ubuntu CI environment is fixed, since local verification
-of this chunk never reproduced the failure in the first place; treat a recurrence on CI specifically
-(vs. locally) as this same known characteristic unless new evidence points elsewhere.
+verification: `checkout-happy-path.spec.ts`'s invoice-download step (`CheckoutPage.downloadInvoice()`)
+hit the test's default 30s timeout on WebKit only, twice (original + retry), while chromium/firefox and
+the rest of the suite passed (104/105). This was **initially misdiagnosed as a CI-environment timing
+characteristic** (headless WebKit on Linux CI assumed to just be slower to fire Playwright's native
+`download` event) and "fixed" by raising `waitForEvent('download')` to a 45s timeout plus the test's own
+timeout to 60s. **That fix did not hold**: a second real CI run hit the full 45000ms timeout with zero
+occurrence of the `download` event, twice (original + retry1) — proving this was never a timing issue.
+The native `download` event genuinely never fires for this interaction on Playwright's Linux/WebKit
+build in GitHub Actions, even though it fires fine on a local Windows WebKit build, consistent with
+Playwright's WebKit builds differing meaningfully by OS (Linux uses a different underlying engine build
+than Windows/macOS) and browser-download-manager support being a known gap area on Linux WebKit
+specifically. No amount of additional timeout would have fixed this.
+
+**Corrected fix:** the verification for this one step no longer depends on any browser's native
+download event or download manager at all. `CheckoutPage.downloadInvoice(orderId)` now clicks "Download
+Invoice" and captures the resulting `GET /download_invoice/{orderId}` response via
+`page.waitForResponse()`, asserting status (200) and the `content-disposition` header directly.
+Reading that same response's *body* turned out to have its own, broader cross-browser gap surfaced
+during this fix's own local verification: once a response is classified by the browser as a download,
+its body becomes unreadable via the normal `Response` object on more than just WebKit — chromium throws
+immediately (`"Response body is not available for a response that was navigated away from"`), webkit
+hangs until the test timeout, and only firefox happened to still expose it. A new
+`CheckoutPage.fetchInvoiceText(orderId)` method re-fetches the same URL independently via
+`page.request` (an `APIRequestContext` sharing the page's authenticated session cookies) — a plain HTTP
+request never handed to any browser download manager, so its body is reliably readable on all three
+browsers. `test.setTimeout()` was reduced from 60s to 45s (a general safety margin for this flow's
+several real network round-trips, no longer justified by the download step specifically, which no
+longer waits on anything that can silently never resolve), and `acceptDownloads: true` was kept in
+`playwright.config.ts` as a defensive default for the click itself rather than because any assertion
+still depends on it. Re-verified locally in a single full run across chromium, firefox, and webkit (one
+real order per browser): all three passed (max 21.2s, well under the 45s budget).
 
 Fully planned separately: see `specs/checkout.plan.md`.
 
