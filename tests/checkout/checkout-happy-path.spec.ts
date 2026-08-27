@@ -13,6 +13,13 @@ test.describe('Checkout / Orders', () => {
   test('Full checkout happy path: existing logged-in session through order placement and invoice download', async ({
     page,
   }) => {
+    // This test runs the entire signup -> cart -> checkout -> payment -> invoice-download flow in a
+    // single test, so the default 30s test timeout can be tight in a slower CI environment (confirmed
+    // on GitHub Actions/Ubuntu headless WebKit, where the 'Download Invoice' step's native download
+    // event took longer to fire than the remaining per-test budget). Raised here, per-test, rather
+    // than in playwright.config.ts's global timeout, since only this flow is long enough to need it.
+    test.setTimeout(60_000);
+
     const loginPage = new LoginPage(page);
     const signupPage = new SignupPage(page);
     const productDetailsPage = new ProductDetailsPage(page);

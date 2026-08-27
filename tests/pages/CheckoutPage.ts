@@ -190,9 +190,25 @@ export class CheckoutPage extends BasePage {
     return Number(match[1]);
   }
 
-  /** Click "Download Invoice" and return the resulting Playwright Download object. */
+  /**
+   * Click "Download Invoice" and return the resulting Playwright Download object.
+   *
+   * An explicit, generous timeout is set on the 'download' event wait (rather than relying on the
+   * ambient default, which is otherwise capped by however much of the test's own timeout budget is
+   * left): confirmed via CI investigation, headless WebKit on Linux CI runners has been observed to
+   * take noticeably longer than Chromium/Firefox to fire the native download event for the exact
+   * same 'content-disposition: attachment' server response, occasionally missing the default 30s
+   * test timeout once the preceding signup/cart/checkout/payment steps have already used part of
+   * that budget — a CI-environment timing characteristic, not a site behavior difference (see
+   * specs/test-plan.md's Checkout/Orders section). Pair with the caller also raising the test's own
+   * timeout for this step (test.setTimeout), since a call-level timeout alone cannot outlast the
+   * enclosing test's overall budget.
+   */
   async downloadInvoice(): Promise<Download> {
-    const [download] = await Promise.all([this.page.waitForEvent('download'), this.downloadInvoiceLink.click()]);
+    const [download] = await Promise.all([
+      this.page.waitForEvent('download', { timeout: 45_000 }),
+      this.downloadInvoiceLink.click(),
+    ]);
     return download;
   }
 }

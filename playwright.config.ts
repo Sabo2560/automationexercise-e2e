@@ -31,6 +31,10 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+
+    /* Explicit rather than relied-upon-as-default: the Checkout/Orders chunk's invoice download
+     * (CheckoutPage.downloadInvoice()) depends on this being true on every browser/project. */
+    acceptDownloads: true,
   },
 
   /* Configure projects for major browsers */

@@ -333,6 +333,26 @@ missed Firefox's rendered `innerText` coming back upper-cased for the address-se
 cross-browser `innerText`/CSS-`text-transform` rendering difference, not a site defect) — the filter is
 now case-insensitive.
 
+A CI-only (GitHub Actions, Ubuntu headless) failure surfaced after this chunk's original local
+verification, distinct from the two above: `checkout-happy-path.spec.ts`'s invoice-download step
+(`CheckoutPage.downloadInvoice()`) hit the test's default 30s timeout on WebKit only, twice
+(original + retry), while chromium/firefox and the rest of the suite passed (104/105). Investigation
+confirmed this is a CI-environment timing characteristic, not a site regression: chromium and firefox
+both received a real, correctly-content-verified download for the same order in the same run, so the
+server-side `/download_invoice/{id}` response itself is not implicated. Headless WebKit on Linux CI
+runners has been observed to take noticeably longer than chromium/firefox to fire Playwright's native
+`download` event for the same `content-disposition: attachment` response — compounded by this being a
+single long test (signup → cart → checkout → payment → invoice download → cleanup) that had already
+spent part of its 30s budget by the time it reached this step. Fixed by giving
+`CheckoutPage.downloadInvoice()`'s `waitForEvent('download')` call an explicit 45s timeout and raising
+this one test's own timeout to 60s via `test.setTimeout()` (not `playwright.config.ts`'s global
+timeout, since no other test in this chunk needs it), plus making `acceptDownloads: true` explicit in
+`playwright.config.ts` rather than relying on the Playwright default. Re-verified locally on the
+`webkit` project (passed, ~17s total, well within the new budget) — noted for future maintainers that
+a local Windows pass does not fully prove the Ubuntu CI environment is fixed, since local verification
+of this chunk never reproduced the failure in the first place; treat a recurrence on CI specifically
+(vs. locally) as this same known characteristic unless new evidence points elsewhere.
+
 Fully planned separately: see `specs/checkout.plan.md`.
 
 ## 10. Next Steps
