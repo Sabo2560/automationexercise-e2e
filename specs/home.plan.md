@@ -30,7 +30,7 @@ Priority legend used in each test name below: [P0]=Critical, [P1]=High, [P2]=Med
 
 #### 1.1. [P0-Critical] Home page loads with all key sections visible
 
-**File:** `tests/home/home.spec.ts`
+**File:** `tests/ui/home/home.spec.ts`
 
 **Steps:**
   1. Navigate to https://automationexercise.com/ (fresh/blank browser state, no prior login or cart items).
@@ -48,7 +48,7 @@ Priority legend used in each test name below: [P0]=Critical, [P1]=High, [P2]=Med
 
 #### 1.2. [P1-High] Header navigation lands on the correct destination page for each top-level link
 
-**File:** `tests/home/home-navigation.spec.ts`
+**File:** `tests/ui/home/home-navigation.spec.ts`
 
 **Steps:**
   1. From the home page, click the 'Products' nav link.
@@ -67,7 +67,7 @@ Priority legend used in each test name below: [P0]=Critical, [P1]=High, [P2]=Med
 
 #### 1.3. [P2-Medium] Newsletter subscription accepts a valid email and shows the success confirmation
 
-**File:** `tests/home/home-subscription.spec.ts`
+**File:** `tests/ui/home/home-subscription.spec.ts`
 
 **Steps:**
   1. On the home page, scroll to the footer Subscription box. Confirm the email input is empty (fresh state, no pre-filled value). Fill it with a syntactically valid, unique email address (e.g. using a timestamp/random suffix to avoid collisions) and click the subscribe (arrow) button.
@@ -76,7 +76,7 @@ Priority legend used in each test name below: [P0]=Critical, [P1]=High, [P2]=Med
 
 #### 1.4. [P2-Medium] Newsletter subscription rejects empty email via native HTML5 validation
 
-**File:** `tests/home/home-subscription.spec.ts`
+**File:** `tests/ui/home/home-subscription.spec.ts`
 
 **Steps:**
   1. On the home page, scroll to the footer Subscription box. Leave the email input empty and click the subscribe button.
@@ -85,7 +85,7 @@ Priority legend used in each test name below: [P0]=Critical, [P1]=High, [P2]=Med
 
 #### 1.5. [P2-Medium] Newsletter subscription rejects malformed email via native HTML5 validation
 
-**File:** `tests/home/home-subscription.spec.ts`
+**File:** `tests/ui/home/home-subscription.spec.ts`
 
 **Steps:**
   1. On the home page, scroll to the footer Subscription box. Type a string with no '@' symbol (e.g. 'notanemail') into the email input and click the subscribe button.
@@ -94,7 +94,7 @@ Priority legend used in each test name below: [P0]=Critical, [P1]=High, [P2]=Med
 
 #### 1.6. [P3-Low] Scroll-to-top button appears on scroll and returns the page to the top
 
-**File:** `tests/home/home-scroll.spec.ts`
+**File:** `tests/ui/home/home-scroll.spec.ts`
 
 **Steps:**
   1. On a freshly loaded home page, confirm the scroll-to-top button (#scrollUp) is present in the DOM but not visible (CSS display equals 'none') before any scrolling occurs.

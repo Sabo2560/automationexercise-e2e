@@ -2,8 +2,8 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { CartPage } from '../pages/CartPage';
-import { ProductDetailsPage } from '../pages/ProductDetailsPage';
+import { CartPage } from '../../pages/CartPage';
+import { ProductDetailsPage } from '../../pages/ProductDetailsPage';
 
 test.describe('Cart Quantity Control', () => {
   test('Cart quantity is a static, non-editable display control', async ({ page }) => {

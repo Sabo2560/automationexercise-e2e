@@ -2,8 +2,8 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/LoginPage';
-import { SignupPage, generateTestUser } from '../pages/SignupPage';
+import { LoginPage } from '../../pages/LoginPage';
+import { SignupPage, generateTestUser } from '../../pages/SignupPage';
 
 test.describe('Login', () => {
   test('Invalid login credentials show an inline error and do not authenticate', async ({ page }) => {

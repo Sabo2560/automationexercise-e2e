@@ -2,7 +2,7 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { ProductsPage } from '../pages/ProductsPage';
+import { ProductsPage } from '../../pages/ProductsPage';
 
 test.describe('Products Listing', () => {
   test("Default /products load shows the full 'All Products' grid with well-formed cards", async ({ page }) => {

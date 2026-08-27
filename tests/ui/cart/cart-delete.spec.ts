@@ -2,8 +2,8 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { CartPage } from '../pages/CartPage';
-import { ProductDetailsPage } from '../pages/ProductDetailsPage';
+import { CartPage } from '../../pages/CartPage';
+import { ProductDetailsPage } from '../../pages/ProductDetailsPage';
 
 test.describe('Item Removal', () => {
   test('Deleting one of two items removes only that row and leaves the other item and its data intact', async ({ page }) => {

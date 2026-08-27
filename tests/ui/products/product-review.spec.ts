@@ -2,7 +2,7 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { ProductDetailsPage } from '../pages/ProductDetailsPage';
+import { ProductDetailsPage } from '../../pages/ProductDetailsPage';
 
 test.describe('Product Review Submission', () => {
   test('Submitting a fully completed review clears the form fields (best-effort assertion; success alert visibility is unconfirmed)', async ({ page }) => {

@@ -2,8 +2,8 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { CartPage } from '../pages/CartPage';
-import { ProductDetailsPage } from '../pages/ProductDetailsPage';
+import { CartPage } from '../../pages/CartPage';
+import { ProductDetailsPage } from '../../pages/ProductDetailsPage';
 
 test.describe('Login-Gated Checkout', () => {
   test("Clicking 'Proceed to Checkout' while not logged in shows the login/register modal instead of navigating to checkout", async ({ page }) => {

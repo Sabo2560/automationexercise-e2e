@@ -2,7 +2,7 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { CartPage } from '../pages/CartPage';
+import { CartPage } from '../../pages/CartPage';
 
 test.describe('Empty Cart State', () => {
   test('Fresh visit to /view_cart with no items shows the empty-cart state', async ({ page }) => {

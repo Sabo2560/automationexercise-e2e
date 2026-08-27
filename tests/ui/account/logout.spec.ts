@@ -2,8 +2,8 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/LoginPage';
-import { SignupPage, generateTestUser } from '../pages/SignupPage';
+import { LoginPage } from '../../pages/LoginPage';
+import { SignupPage, generateTestUser } from '../../pages/SignupPage';
 
 test.describe('Logout and Delete Account', () => {
   test('Logout ends the session and reverts the header to the logged-out state', async ({ page }) => {

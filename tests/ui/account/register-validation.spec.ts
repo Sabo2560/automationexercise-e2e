@@ -2,8 +2,8 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/LoginPage';
-import { SignupPage, generateTestUser } from '../pages/SignupPage';
+import { LoginPage } from '../../pages/LoginPage';
+import { SignupPage, generateTestUser } from '../../pages/SignupPage';
 
 test.describe('Registration Validation', () => {
   test('Leaving a required Account Information field empty blocks Create Account submission', async ({ page }) => {

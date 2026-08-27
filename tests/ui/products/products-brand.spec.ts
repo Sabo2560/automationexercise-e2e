@@ -2,7 +2,7 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { ProductsPage } from '../pages/ProductsPage';
+import { ProductsPage } from '../../pages/ProductsPage';
 
 test.describe('Brand Filtering', () => {
   test("Clicking a brand link navigates to its dedicated listing showing only that brand's products", async ({ page }) => {

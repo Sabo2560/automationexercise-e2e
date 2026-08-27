@@ -2,8 +2,8 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { CartPage } from '../pages/CartPage';
-import { ProductDetailsPage } from '../pages/ProductDetailsPage';
+import { CartPage } from '../../pages/CartPage';
+import { ProductDetailsPage } from '../../pages/ProductDetailsPage';
 
 test.describe('Cart Line-Item Display', () => {
   test('Adding a single item via Add to Cart displays its name, category, price, quantity, and correct line total in the cart', async ({ page }) => {

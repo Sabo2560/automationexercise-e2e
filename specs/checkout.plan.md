@@ -2,9 +2,9 @@
 
 ## Application Overview
 
-This plan covers the AutomationExercise "Checkout / Orders" chunk: `/view_cart` -> "Proceed To Checkout" -> the login-gate (`#checkoutModal` when logged out; straight-through when logged in) -> `/checkout` (address confirmation + order review) -> "Place Order" -> `/payment` (mock payment form) -> `/payment_done/{orderId}` (order confirmation) -> "Download Invoice" (`/download_invoice/{orderId}`). Adding item(s) to cart itself is explicitly OUT OF SCOPE here and is reused as-is from the existing Products/Cart chunks (`ProductDetailsPage.addToCartAndViewCart()`, `CartPage`) — this plan does not re-test add-to-cart display/removal, which are already covered by `specs/cart.plan.md`. The already-implemented Cart-chunk scenario "Clicking Proceed to Checkout while not logged in shows the login/register modal" (`tests/cart/cart-checkout-gate.spec.ts`) is also reused/referenced, not re-verified in detail — this plan's login-gate scenario only re-triggers the modal as an entry point into its own distinct coverage (registering through the gate and successfully resuming checkout), matching published Test Case 14 ("Place Order: Register while Checkout").
+This plan covers the AutomationExercise "Checkout / Orders" chunk: `/view_cart` -> "Proceed To Checkout" -> the login-gate (`#checkoutModal` when logged out; straight-through when logged in) -> `/checkout` (address confirmation + order review) -> "Place Order" -> `/payment` (mock payment form) -> `/payment_done/{orderId}` (order confirmation) -> "Download Invoice" (`/download_invoice/{orderId}`). Adding item(s) to cart itself is explicitly OUT OF SCOPE here and is reused as-is from the existing Products/Cart chunks (`ProductDetailsPage.addToCartAndViewCart()`, `CartPage`) — this plan does not re-test add-to-cart display/removal, which are already covered by `specs/cart.plan.md`. The already-implemented Cart-chunk scenario "Clicking Proceed to Checkout while not logged in shows the login/register modal" (`tests/ui/cart/cart-checkout-gate.spec.ts`) is also reused/referenced, not re-verified in detail — this plan's login-gate scenario only re-triggers the modal as an entry point into its own distinct coverage (registering through the gate and successfully resuming checkout), matching published Test Case 14 ("Place Order: Register while Checkout").
 
-This flow requires a logged-in account with at least one cart item, so every scenario below creates one disposable test-user account via the existing `SignupPage.generateTestUser()` / `SignupPage.registerAndLogin(loginPage, ...)` pattern (see `tests/pages/SignupPage.ts`), and deletes that account at the end via the standard `Delete Account` flow (same pattern as `tests/account/delete-account.spec.ts`) — CONFIRMED LIVE that account deletion works identically and without error even after a real order has been placed under that account (tested end-to-end: registered an account, added an item, completed a full order/payment, then deleted the account — got the standard "Account Deleted!" confirmation with no special-cased behavior). No scenario in this plan needs to leave an orphaned account or a stranded order.
+This flow requires a logged-in account with at least one cart item, so every scenario below creates one disposable test-user account via the existing `SignupPage.generateTestUser()` / `SignupPage.registerAndLogin(loginPage, ...)` pattern (see `tests/pages/SignupPage.ts`), and deletes that account at the end via the standard `Delete Account` flow (same pattern as `tests/ui/account/delete-account.spec.ts`) — CONFIRMED LIVE that account deletion works identically and without error even after a real order has been placed under that account (tested end-to-end: registered an account, added an item, completed a full order/payment, then deleted the account — got the standard "Account Deleted!" confirmation with no special-cased behavior). No scenario in this plan needs to leave an orphaned account or a stranded order.
 
 PAYMENT-DATA SAFETY: every scenario that reaches the `/payment` form uses only obviously-fake, non-functional test data — Name on Card "Test User", Card Number "4242424242424242" (an obviously-fake, well-known dummy pattern, never a real card), CVC "123", Expiry "12"/"2030". No real or real-looking personal payment data is ever used.
 
@@ -38,7 +38,7 @@ PAYMENT-DATA SAFETY: every scenario that reaches the `/payment` form uses only o
 
 #### 1.1. Full checkout happy path: existing logged-in session through order placement and invoice download
 
-**File:** `tests/checkout/checkout-happy-path.spec.ts`
+**File:** `tests/ui/checkout/checkout-happy-path.spec.ts`
 
 **Steps:**
   1. Generate a disposable test user via SignupPage.generateTestUser() and register+log in via SignupPage.registerAndLogin(loginPage, name, email, password) (default account-information values: title 'Mr.', DOB 10 May 1990, first/last name 'Test'/'User', address '123 Test Street', country 'United States', state 'California', city 'San Francisco', zipcode '94107', mobile '1234567890'). Then add product 1 ('Blue Top', confirmed unit price 'Rs. 500') to the cart via ProductDetailsPage.addToCartAndViewCart(1) and land on /view_cart.
@@ -68,11 +68,11 @@ PAYMENT-DATA SAFETY: every scenario that reaches the `/payment` form uses only o
 
 #### 1.2. Login-gate modal leads into register-while-checkout, then successfully resumes to the address page (Test Case 14 / 23)
 
-**File:** `tests/checkout/checkout-login-gate.spec.ts`
+**File:** `tests/ui/checkout/checkout-login-gate.spec.ts`
 
 **Steps:**
   1. In a fresh, logged-out browser context, add product 1 to the cart via ProductDetailsPage.addToCartAndViewCart(1) and land on /view_cart. Click 'Proceed To Checkout' (CartPage.clickProceedToCheckout()).
-    - expect: '#checkoutModal' becomes visible. (This modal's own heading/message/link content is already fully asserted in the Cart chunk's tests/cart/cart-checkout-gate.spec.ts; this step is only the entry point into this scenario's own distinct coverage below, not a re-verification of the modal's contents.)
+    - expect: '#checkoutModal' becomes visible. (This modal's own heading/message/link content is already fully asserted in the Cart chunk's tests/ui/cart/cart-checkout-gate.spec.ts; this step is only the entry point into this scenario's own distinct coverage below, not a re-verification of the modal's contents.)
   2. Click the modal's 'Register / Login' link (cartPage.checkoutModalLoginLink).
     - expect: The resulting page URL equals exactly '/login' (a real navigation away from /view_cart).
     - expect: A 'New User Signup!' heading is visible on the destination page.
@@ -88,7 +88,7 @@ PAYMENT-DATA SAFETY: every scenario that reaches the `/payment` form uses only o
 
 #### 1.3. Payment form blocks submission until all required fields are filled (native HTML5 validation)
 
-**File:** `tests/checkout/checkout-payment-validation.spec.ts`
+**File:** `tests/ui/checkout/checkout-payment-validation.spec.ts`
 
 **Steps:**
   1. Using a fresh disposable account (SignupPage.registerAndLogin) and 1 item added to cart (ProductDetailsPage.addToCartAndViewCart(1)), reach '/payment' via CartPage.proceedToCheckoutButton then CheckoutPage.clickPlaceOrder(). Read each of the 5 inputs' ('[data-qa="name-on-card"]', '[data-qa="card-number"]', '[data-qa="cvc"]', '[data-qa="expiry-month"]', '[data-qa="expiry-year"]') 'required' IDL property via locator.evaluate.

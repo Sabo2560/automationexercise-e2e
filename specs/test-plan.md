@@ -43,7 +43,7 @@ Heal → Docs Sync).
 | 9 | Cross-Page Navigation | all of the above | Not yet planned |
 
 Chunk 1 (Home) already has `specs/home.plan.md`, `tests/pages/BasePage.ts`, `tests/pages/HomePage.ts`,
-and `tests/home/home.spec.ts` implemented and passing — treat it as the first completed chunk under
+and `tests/ui/home/home.spec.ts` implemented and passing — treat it as the first completed chunk under
 this strategy, not something to replan or regenerate.
 
 Chunk 8 (API Test Track) already has a start: `tests/api/products.spec.ts` (GET/POST
@@ -57,7 +57,7 @@ delete/update account variants). Remaining endpoints are unplanned.
   Signup!" (name + email only). Submitting Signup navigates to `/signup`, a full "Enter Account
   Information" form (title, password, DOB, address block) that on submit creates a real account and
   logs the user in. Logout and Delete Account are reachable only once logged in — both are now
-  exercised and covered (`tests/account/logout.spec.ts`, `tests/account/delete-account.spec.ts`). This
+  exercised and covered (`tests/ui/account/logout.spec.ts`, `tests/ui/account/delete-account.spec.ts`). This
   chunk gates Checkout (chunk 5) — any account created for checkout tests must be either disposable
   (create + delete per test) or a fixed seeded test user; see Test Data section below.
 - **Product Catalog & Search** — `/products` lists all products with a search box, sidebar category
@@ -186,7 +186,7 @@ that chunk's own planning pass — it is not uniform.
 ## 5. Home Page — Implemented
 
 **Status:** Fully planned (`specs/home.plan.md`, 6 scenarios, P0–P3) and implemented
-(`tests/home/home.spec.ts`, `tests/pages/BasePage.ts`, `tests/pages/HomePage.ts`). Confirmed passing.
+(`tests/ui/home/home.spec.ts`, `tests/pages/BasePage.ts`, `tests/pages/HomePage.ts`). Confirmed passing.
 
 Notable quirks captured during this chunk (relevant to conventions above): no `data-qa` attributes
 anywhere on the home page; header nav item accessible names carry a leading icon-font glyph that must
@@ -199,7 +199,7 @@ Fully planned separately: see `specs/home.plan.md`.
 ## 6. Account / Auth — Implemented
 
 **Status:** Fully planned (`specs/account.plan.md`, 8 scenarios, P0–P3) and implemented across six spec
-files under `tests/account/` (`login.spec.ts`, `login-validation.spec.ts`, `register.spec.ts`,
+files under `tests/ui/account/` (`login.spec.ts`, `login-validation.spec.ts`, `register.spec.ts`,
 `register-validation.spec.ts`, `logout.spec.ts`, `delete-account.spec.ts` — 10 tests total). Confirmed
 passing across chromium, firefox, and webkit, each spec file verified individually.
 
@@ -232,7 +232,7 @@ Fully planned separately: see `specs/account.plan.md`.
 ## 7. Product Catalog & Search — Implemented
 
 **Status:** Fully planned (`specs/products.plan.md`, 12 scenarios, P0–P3) and implemented across six
-spec files under `tests/products/` (`products-listing.spec.ts`, `products-category.spec.ts`,
+spec files under `tests/ui/products/` (`products-listing.spec.ts`, `products-category.spec.ts`,
 `products-search.spec.ts`, `products-brand.spec.ts`, `product-details.spec.ts`, `product-review.spec.ts`
 — 12 tests total). Confirmed passing across chromium, firefox, and webkit.
 
@@ -270,7 +270,7 @@ Fully planned separately: see `specs/products.plan.md`.
 ## 8. Cart — Implemented
 
 **Status:** Fully planned (`specs/cart.plan.md`, 5 scenario groups, 7 scenarios, P0–P2) and
-implemented across five spec files under `tests/cart/` (`cart-empty.spec.ts`, `cart-display.spec.ts`,
+implemented across five spec files under `tests/ui/cart/` (`cart-empty.spec.ts`, `cart-display.spec.ts`,
 `cart-quantity.spec.ts`, `cart-delete.spec.ts`, `cart-checkout-gate.spec.ts` — 7 tests total).
 Confirmed passing across chromium, firefox, and webkit (21/21 in a full run across all three
 projects).
@@ -298,7 +298,7 @@ Fully planned separately: see `specs/cart.plan.md`.
 ## 9. Checkout / Orders — Implemented
 
 **Status:** Fully planned (`specs/checkout.plan.md`, 3 scenarios, P0/P0/P2) and implemented across
-three spec files under `tests/checkout/` (`checkout-happy-path.spec.ts`, `checkout-login-gate.spec.ts`,
+three spec files under `tests/ui/checkout/` (`checkout-happy-path.spec.ts`, `checkout-login-gate.spec.ts`,
 `checkout-payment-validation.spec.ts` — 3 tests total). Confirmed passing across chromium, firefox, and
 webkit (9/9 in a full run across all three projects).
 

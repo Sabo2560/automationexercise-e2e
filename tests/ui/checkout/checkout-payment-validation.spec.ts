@@ -2,11 +2,11 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { CartPage } from '../pages/CartPage';
-import { CheckoutPage } from '../pages/CheckoutPage';
-import { LoginPage } from '../pages/LoginPage';
-import { ProductDetailsPage } from '../pages/ProductDetailsPage';
-import { SignupPage, generateTestUser } from '../pages/SignupPage';
+import { CartPage } from '../../pages/CartPage';
+import { CheckoutPage } from '../../pages/CheckoutPage';
+import { LoginPage } from '../../pages/LoginPage';
+import { ProductDetailsPage } from '../../pages/ProductDetailsPage';
+import { SignupPage, generateTestUser } from '../../pages/SignupPage';
 
 test.describe('Checkout / Orders', () => {
   test('Payment form blocks submission until all required fields are filled (native HTML5 validation)', async ({

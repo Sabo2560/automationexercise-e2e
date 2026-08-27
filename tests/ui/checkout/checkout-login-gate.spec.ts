@@ -2,11 +2,11 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { CartPage } from '../pages/CartPage';
-import { CheckoutPage } from '../pages/CheckoutPage';
-import { LoginPage } from '../pages/LoginPage';
-import { ProductDetailsPage } from '../pages/ProductDetailsPage';
-import { SignupPage, generateTestUser } from '../pages/SignupPage';
+import { CartPage } from '../../pages/CartPage';
+import { CheckoutPage } from '../../pages/CheckoutPage';
+import { LoginPage } from '../../pages/LoginPage';
+import { ProductDetailsPage } from '../../pages/ProductDetailsPage';
+import { SignupPage, generateTestUser } from '../../pages/SignupPage';
 
 test.describe('Checkout / Orders', () => {
   test('Login-gate modal leads into register-while-checkout, then successfully resumes to the address page (Test Case 14 / 23)', async ({

@@ -2,7 +2,7 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { HomePage } from '../pages/HomePage';
+import { HomePage } from '../../pages/HomePage';
 
 test.describe('Home Page', () => {
   test('Home page loads with all key sections visible', async ({ page }) => {

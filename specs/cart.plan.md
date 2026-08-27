@@ -29,7 +29,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: cor
 
 #### 1.1. Fresh visit to /view_cart with no items shows the empty-cart state
 
-**File:** `tests/cart/cart-empty.spec.ts`
+**File:** `tests/ui/cart/cart-empty.spec.ts`
 
 **Steps:**
   1. In a fresh browser context with no prior Add-to-Cart actions, navigate directly to https://automationexercise.com/view_cart.
@@ -47,7 +47,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: cor
 
 #### 2.1. Adding a single item via Add to Cart displays its name, category, price, quantity, and correct line total in the cart
 
-**File:** `tests/cart/cart-display.spec.ts`
+**File:** `tests/ui/cart/cart-display.spec.ts`
 
 **Steps:**
   1. Using ProductDetailsPage, navigate to /product_details/1 ('Blue Top', unit price confirmed 'Rs. 500'), set quantity to 2, click Add to Cart, wait for '#cartModal' to appear, then click its 'View Cart' link to navigate to /view_cart.
@@ -57,7 +57,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: cor
 
 #### 2.2. Adding a second distinct product shows both rows independently with correct per-row data and no combined cart-wide total
 
-**File:** `tests/cart/cart-display.spec.ts`
+**File:** `tests/ui/cart/cart-display.spec.ts`
 
 **Steps:**
   1. Starting from a cart already containing product 1 ('Blue Top', quantity 2, unit price Rs. 500 -- added the same way as the previous scenario), use ProductDetailsPage to navigate to /product_details/2 ('Men Tshirt'), leave quantity at its default, click Add to Cart, then use its cart modal's 'View Cart' link to return to /view_cart.
@@ -73,7 +73,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: cor
 
 #### 3.1. Cart quantity is a static, non-editable display control
 
-**File:** `tests/cart/cart-quantity.spec.ts`
+**File:** `tests/ui/cart/cart-quantity.spec.ts`
 
 **Steps:**
   1. Add product 1 to the cart with quantity 2 (via ProductDetailsPage, as in the display scenarios above) and navigate to /view_cart. Confirm the row's quantity control is a '<button>' element (not an '<input>') by reading its tagName, and confirm it does not carry the HTML 'disabled' attribute.
@@ -88,7 +88,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: cor
 
 #### 4.1. Deleting one of two items removes only that row and leaves the other item and its data intact
 
-**File:** `tests/cart/cart-delete.spec.ts`
+**File:** `tests/ui/cart/cart-delete.spec.ts`
 
 **Steps:**
   1. Add product 1 (quantity 2) and product 2 (default quantity) to the cart via ProductDetailsPage and navigate to /view_cart, confirming '#cart_info_table' shows exactly 2 rows ('product-1' and 'product-2'). Then click the delete control ('.cart_delete a.cart_quantity_delete') inside the 'product-2' row.
@@ -100,7 +100,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: cor
 
 #### 4.2. Deleting the last remaining item returns the cart to the empty-cart state
 
-**File:** `tests/cart/cart-delete.spec.ts`
+**File:** `tests/ui/cart/cart-delete.spec.ts`
 
 **Steps:**
   1. Starting from a cart containing exactly one item (product 1, added via ProductDetailsPage as in prior scenarios) on /view_cart, click that row's delete control ('.cart_delete a.cart_quantity_delete' inside '#product-1').
@@ -116,7 +116,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: cor
 
 #### 5.1. Clicking 'Proceed to Checkout' while not logged in shows the login/register modal instead of navigating to checkout
 
-**File:** `tests/cart/cart-checkout-gate.spec.ts`
+**File:** `tests/ui/cart/cart-checkout-gate.spec.ts`
 
 **Steps:**
   1. In a fresh, logged-out browser context, add product 1 to the cart via ProductDetailsPage and navigate to /view_cart. Confirm no network requests to any checkout/payment endpoint have occurred yet, then click the 'Proceed To Checkout' control ('a.check_out').

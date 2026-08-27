@@ -31,7 +31,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: reg
 
 #### 1.1. Invalid login credentials show an inline error and do not authenticate
 
-**File:** `tests/account/login.spec.ts`
+**File:** `tests/ui/account/login.spec.ts`
 
 **Steps:**
   1. Navigate to https://automationexercise.com/login (fresh/blank browser state, not logged in). Confirm both the 'Login to your account' email/password fields and the 'New User Signup!' name/email fields are present and empty (no pre-filled default values were observed during exploration).
@@ -44,7 +44,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: reg
 
 #### 1.2. Valid login authenticates and updates the header to the logged-in state
 
-**File:** `tests/account/login.spec.ts`
+**File:** `tests/ui/account/login.spec.ts`
 
 **Steps:**
   1. Using a fixture account created via the Signup flow at the start of this test (unique email/password generated for this run), navigate to /login, fill data-qa='login-email' and data-qa='login-password' with that account's credentials, and click data-qa='login-button'.
@@ -55,7 +55,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: reg
 
 #### 1.3. Missing email or password on the login form is blocked before submission (native required-field validation)
 
-**File:** `tests/account/login-validation.spec.ts`
+**File:** `tests/ui/account/login-validation.spec.ts`
 
 **Steps:**
   1. On a freshly loaded /login page, leave data-qa='login-email' empty, fill data-qa='login-password' with any value, and click data-qa='login-button'.
@@ -68,7 +68,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: reg
 
 #### 2.1. Full registration flow: New User Signup -> Account Information -> Account Created -> logged in
 
-**File:** `tests/account/register.spec.ts`
+**File:** `tests/ui/account/register.spec.ts`
 
 **Steps:**
   1. Navigate to /login (fresh/blank state). In the 'New User Signup!' section, fill data-qa='signup-name' with a test name and data-qa='signup-email' with a newly generated unique email (timestamp/random suffix), then click data-qa='signup-button'.
@@ -89,7 +89,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: reg
 
 #### 2.2. Registering with an email that already belongs to an existing account is rejected with an inline error
 
-**File:** `tests/account/register.spec.ts`
+**File:** `tests/ui/account/register.spec.ts`
 
 **Steps:**
   1. Setup (within this same test, so the fixture is self-contained): create a real account via the full New User Signup -> Account Information -> Account Created flow using a freshly generated unique email, then log out via the header 'Logout' link so the session is clean.
@@ -103,7 +103,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: reg
 
 #### 2.3. Leaving a required Account Information field empty blocks Create Account submission (native required-field validation)
 
-**File:** `tests/account/register-validation.spec.ts`
+**File:** `tests/ui/account/register-validation.spec.ts`
 
 **Steps:**
   1. Reach the /signup Account Information form via the New User Signup mini-form (unique test email). Fill every required field EXCEPT data-qa='first_name' (leave it empty), then click data-qa='create-account'.
@@ -116,7 +116,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: reg
 
 #### 3.1. Logout ends the session and reverts the header to the logged-out state
 
-**File:** `tests/account/logout.spec.ts`
+**File:** `tests/ui/account/logout.spec.ts`
 
 **Steps:**
   1. Set up by registering a fresh account via the full Signup -> Account Information flow (unique email) so the browser is in a logged-in state. Confirm the header shows 'Logged in as {name}' before proceeding.
@@ -130,7 +130,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: reg
 
 #### 3.2. Delete Account permanently removes the account and immediately logs the user out
 
-**File:** `tests/account/delete-account.spec.ts`
+**File:** `tests/ui/account/delete-account.spec.ts`
 
 **Steps:**
   1. Set up by registering a fresh account via the full Signup -> Account Information flow (unique email), confirming the post-registration logged-in state (header shows 'Logged in as {name}').

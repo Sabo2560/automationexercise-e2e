@@ -2,7 +2,7 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { ProductDetailsPage } from '../pages/ProductDetailsPage';
+import { ProductDetailsPage } from '../../pages/ProductDetailsPage';
 
 test.describe('Product Details & Add to Cart', () => {
   test('Product details page renders all expected product information', async ({ page }) => {

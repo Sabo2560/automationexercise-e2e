@@ -2,8 +2,8 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/LoginPage';
-import { SignupPage, generateTestUser } from '../pages/SignupPage';
+import { LoginPage } from '../../pages/LoginPage';
+import { SignupPage, generateTestUser } from '../../pages/SignupPage';
 
 test.describe('Registration', () => {
   test('Full registration flow: New User Signup -> Account Information -> Account Created -> logged in', async ({ page }) => {

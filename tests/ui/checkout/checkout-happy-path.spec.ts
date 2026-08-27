@@ -2,11 +2,11 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { CartPage } from '../pages/CartPage';
-import { CheckoutPage } from '../pages/CheckoutPage';
-import { LoginPage } from '../pages/LoginPage';
-import { ProductDetailsPage } from '../pages/ProductDetailsPage';
-import { SignupPage, generateTestUser } from '../pages/SignupPage';
+import { CartPage } from '../../pages/CartPage';
+import { CheckoutPage } from '../../pages/CheckoutPage';
+import { LoginPage } from '../../pages/LoginPage';
+import { ProductDetailsPage } from '../../pages/ProductDetailsPage';
+import { SignupPage, generateTestUser } from '../../pages/SignupPage';
 
 test.describe('Checkout / Orders', () => {
   test('Full checkout happy path: existing logged-in session through order placement and invoice download', async ({

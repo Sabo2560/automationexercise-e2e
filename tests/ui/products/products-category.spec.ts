@@ -2,7 +2,7 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { ProductsPage } from '../pages/ProductsPage';
+import { ProductsPage } from '../../pages/ProductsPage';
 
 test.describe('Products Listing', () => {
   test('Category sidebar accordion expands the clicked panel and collapses any previously open one', async ({ page }) => {

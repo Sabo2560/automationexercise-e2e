@@ -34,7 +34,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: the
 
 #### 1.1. [P1-High] Default /products load shows the full 'All Products' grid with well-formed cards
 
-**File:** `tests/products/products-listing.spec.ts`
+**File:** `tests/ui/products/products-listing.spec.ts`
 
 **Steps:**
   1. Navigate to https://automationexercise.com/products (fresh/blank browser state). Do not search or filter.
@@ -48,7 +48,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: the
 
 #### 1.2. [P2-Medium] Category sidebar accordion expands the clicked panel and collapses any previously open one
 
-**File:** `tests/products/products-category.spec.ts`
+**File:** `tests/ui/products/products-category.spec.ts`
 
 **Steps:**
   1. On a freshly loaded /products page, confirm no category panel is expanded by default (no subcategory links visible under Women, Men, or Kids), then click the 'Women' category link.
@@ -65,7 +65,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: the
 
 #### 2.1. [P1-High] Searching for an existing term shows the 'Searched Products' state with matching results
 
-**File:** `tests/products/products-search.spec.ts`
+**File:** `tests/ui/products/products-search.spec.ts`
 
 **Steps:**
   1. On a freshly loaded /products page, confirm the search input (#search_product) is empty, then fill it with 'Top' and click the search button (#submit_search).
@@ -75,7 +75,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: the
 
 #### 2.2. [P2-Medium] Searching for a term with no matches shows an empty 'Searched Products' grid
 
-**File:** `tests/products/products-search.spec.ts`
+**File:** `tests/ui/products/products-search.spec.ts`
 
 **Steps:**
   1. On a freshly loaded /products page, fill the search input with a string guaranteed not to match any product (e.g. 'zzzznonexistentproduct123') and submit the search.
@@ -85,7 +85,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: the
 
 #### 2.3. [P2-Medium] Submitting an empty search term falls back to the full 'All Products' listing (boundary case)
 
-**File:** `tests/products/products-search.spec.ts`
+**File:** `tests/ui/products/products-search.spec.ts`
 
 **Steps:**
   1. Navigate directly to /products?search= (empty search query string, reproducing submitting the search form with an empty input).
@@ -98,7 +98,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: the
 
 #### 3.1. [P1-High] Clicking a brand link navigates to its dedicated listing showing only that brand's products
 
-**File:** `tests/products/products-brand.spec.ts`
+**File:** `tests/ui/products/products-brand.spec.ts`
 
 **Steps:**
   1. On a freshly loaded /products page, read the 'Polo' brand link's product-count badge text (expected to read '(6)' based on exploration; read it live rather than hardcoding, in case catalog content changes), then click the 'Polo' brand link.
@@ -115,7 +115,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: the
 
 #### 4.1. [P1-High] Product details page renders all expected product information
 
-**File:** `tests/products/product-details.spec.ts`
+**File:** `tests/ui/products/product-details.spec.ts`
 
 **Steps:**
   1. Navigate directly to https://automationexercise.com/product_details/1 (fresh/blank browser state).
@@ -128,7 +128,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: the
 
 #### 4.2. [P0-Critical] Adding a product to the cart with a custom quantity opens the confirmation modal without navigating away
 
-**File:** `tests/products/product-details.spec.ts`
+**File:** `tests/ui/products/product-details.spec.ts`
 
 **Steps:**
   1. On a freshly loaded /product_details/1 page, clear the quantity input and fill it with '4', then click the 'Add to cart' button.
@@ -144,7 +144,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: the
 
 #### 4.3. [P2-Medium] Quantity input rejects values below its minimum (boundary case)
 
-**File:** `tests/products/product-details.spec.ts`
+**File:** `tests/ui/products/product-details.spec.ts`
 
 **Steps:**
   1. On a freshly loaded /product_details/1 page, use the quantity input's native attributes to attempt setting a value of '0' (below the confirmed min='1'), e.g. via fill('0') followed by reading the input's ValidityState.
@@ -156,7 +156,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: the
 
 #### 5.1. [P3-Low] Submitting a fully completed review clears the form fields (best-effort assertion; success alert visibility is unconfirmed)
 
-**File:** `tests/products/product-review.spec.ts`
+**File:** `tests/ui/products/product-review.spec.ts`
 
 **Steps:**
   1. On a freshly loaded /product_details/1 page, confirm '#name', '#email', and '#review' are all empty, then fill them with a test name, a syntactically valid non-personal test email (e.g. 'test.reviewer.qa@example.com' — do not use any real personal email address for this public, permanently-visible form), and a short review string, then click '#button-review'.
@@ -165,7 +165,7 @@ Priority legend: [P0]=Critical, [P1]=High, [P2]=Medium, [P3]=Low. Rationale: the
 
 #### 5.2. [P2-Medium] Leaving a required review field empty blocks submission via native HTML validation
 
-**File:** `tests/products/product-review.spec.ts`
+**File:** `tests/ui/products/product-review.spec.ts`
 
 **Steps:**
   1. On a freshly loaded /product_details/1 page, fill '#email' and '#review' with valid values but leave '#name' empty, then click '#button-review'.
