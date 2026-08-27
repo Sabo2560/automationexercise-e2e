@@ -39,17 +39,20 @@ Heal → Docs Sync).
 | 5 | Checkout / Orders | `/view_cart` → `/login` → `/payment` → order confirmation | **Implemented** |
 | 6 | Contact Us | `/contact_us` | Not yet planned |
 | 7 | Informational Pages (Test Cases, API Testing) | `/test_cases`, `/api_list` | Not yet planned |
-| 8 | API Test Track | `/api/*` (REST, no browser) | Partially implemented |
+| 8 | API Test Track | `/api/*` (REST, no browser) | **Implemented** |
 | 9 | Cross-Page Navigation | all of the above | Not yet planned |
 
 Chunk 1 (Home) already has `specs/home.plan.md`, `tests/pages/BasePage.ts`, `tests/pages/HomePage.ts`,
 and `tests/ui/home/home.spec.ts` implemented and passing — treat it as the first completed chunk under
 this strategy, not something to replan or regenerate.
 
-Chunk 8 (API Test Track) already has a start: `tests/api/products.spec.ts` (GET/POST
-`/api/productsList`) and `tests/api/brands.spec.ts` (GET/PUT `/api/brandsList`) exist and cover 2 of
-the 14 endpoints documented on `/api_list` (products list, brands list, search product, login/create/
-delete/update account variants). Remaining endpoints are unplanned.
+Chunk 8 (API Test Track) is now fully implemented: `tests/api/products.spec.ts` (GET/POST
+`/api/productsList`), `tests/api/brands.spec.ts` (GET/PUT `/api/brandsList`), `tests/api/search.spec.ts`
+(POST `/api/searchProduct`, valid and missing-param), `tests/api/login.spec.ts` (POST `/api/verifyLogin`
+valid/missing-param/invalid-credentials, GET `/api/verifyLogin` method-not-supported), and
+`tests/api/account.spec.ts` (POST `/api/createAccount`, PUT `/api/updateAccount`, DELETE
+`/api/deleteAccount`, GET `/api/getUserDetailByEmail`) — 12 tests across all five files, 48 test
+executions across chromium/firefox/webkit, all documented endpoints on `/api_list` covered.
 
 ### Chunk descriptions
 
@@ -79,8 +82,8 @@ delete/update account variants). Remaining endpoints are unplanned.
   transactions.
 - **API Test Track** — runs as `tests/api/**`, using Playwright's `request` fixture directly against
   the documented endpoints on `/api_list` (products, brands, search, login/account CRUD). This is a
-  separate track from the UI suite: no browser, no Page Objects, faster and more stable. Continue
-  adding one spec file per remaining documented endpoint.
+  separate track from the UI suite: no browser, no Page Objects, faster and more stable. Now fully
+  implemented across all documented endpoints; see §11.
 - **Cross-Page Navigation** — a dedicated suite (mirroring the existing project convention of
   `tests/componentsnavigation.spec.ts`-style checks in sibling projects) that walks the primary header
   nav across pages end-to-end, confirming each link's destination and back-navigation, reusing
@@ -100,14 +103,14 @@ non-transactional, or purely informational feature.
 | P0 — Critical | Product Catalog & Search | The only path to populate a cart; broken browsing/search blocks Cart and Checkout entirely. |
 | P0 — Critical | Cart | Sits directly between browsing and checkout; broken cart state blocks all purchases. |
 | P0 — Critical | Checkout / Orders | Core business transaction of the site; highest business impact if broken, but can only be planned once Account and Cart are stable (its Page Object composes both). |
-| P1 — High | API Test Track | Fast, stable, high-value regression signal for the same core entities (products, brands, accounts) at a layer decoupled from UI flakiness; cheap to extend incrementally. |
+| P1 — High | API Test Track | Fast, stable, high-value regression signal for the same core entities (products, brands, accounts) at a layer decoupled from UI flakiness; cheap to extend incrementally. **Done.** |
 | P2 — Medium | Contact Us | Self-contained lead-gen form; not on the purchase critical path. |
 | P2 — Medium | Cross-Page Navigation | Valuable regression net once individual chunks exist, but by definition can't be built first and duplicates some coverage already in per-chunk plans. |
 | P3 — Low | Informational Pages | Static documentation content; smoke-level checks only, no transactional risk. |
 
-**Recommended build order:** Home (done) → Account/Auth (done) → Product Catalog & Search → Cart →
-Checkout/Orders → API Test Track (can run in parallel with any UI chunk, no ordering dependency) →
-Contact Us → Cross-Page Navigation → Informational Pages.
+**Recommended build order:** Home (done) → Account/Auth (done) → Product Catalog & Search (done) →
+Cart (done) → Checkout/Orders (done) → API Test Track (done, ran in parallel with no ordering
+dependency) → Contact Us → Cross-Page Navigation → Informational Pages.
 
 ## 4. Shared Technical Conventions
 
@@ -412,11 +415,45 @@ mislabeled/broken/invalid-HTML site defect.
 
 Fully planned separately: see `specs/checkout.plan.md`.
 
-## 10. Next Steps
+## 11. API Test Track — Implemented
+
+**Status:** Fully planned (`specs/api.plan.md`, 10 scenarios, P0–P2) and implemented across five spec
+files under `tests/api/` (`products.spec.ts`, `brands.spec.ts`, `search.spec.ts`, `login.spec.ts`,
+`account.spec.ts` — 12 tests total). Confirmed passing across chromium, firefox, and webkit (48/48 in a
+full run across all three projects).
+
+Notable quirks captured during this chunk (relevant to conventions above): every single endpoint on
+this API returns raw HTTP transport status 200 regardless of semantic outcome — success, missing
+parameters, unsupported methods, and not-found lookups are all distinguished only by a `responseCode`
+field inside the JSON body (200/201 success, 400 bad request, 404 not found, 405 method not supported),
+never by `response.ok()`, which is true in every case including documented error paths. This matches
+the pattern already established in `products.spec.ts`/`brands.spec.ts`. `POST /api/verifyLogin` returns
+the identical `responseCode: 400` / message text regardless of whether `email` or `password` is the
+missing parameter (the API does not distinguish which field was omitted), and returns a distinct
+`responseCode: 404`/`"User not found!"` for a real email with a wrong password — confirmed as three
+genuinely distinct outcomes (200 valid / 400 missing-param / 404 wrong-password), not variations of the
+same error. `POST /api/createAccount`'s error message names the specific missing field (e.g. "email
+parameter is missing"), unlike `verifyLogin`'s generic missing-param message. `GET /api/getUserDetailByEmail`
+response field names differ from the create/update request field names (`first_name`/`last_name`/
+`birth_day` in the response vs. `firstname`/`lastname`/`birth_date` in the request) — this was confirmed
+live and asserted explicitly rather than assumed to match. No `updateProduct` or equivalent
+product-mutation endpoint is documented on `/api_list` beyond the already-covered POST-not-supported
+case on `productsList` and PUT-not-supported case on `brandsList`; the plan's speculative "updateProduct"
+line item was dropped as inapplicable once live exploration confirmed it isn't a real documented
+endpoint. Every scenario that calls `createAccount` generates a unique synthetic email per run and
+deletes the fixture account by the end of the same test (`try`/`finally`, or the delete step doubling as
+the test's own assertion), so no orphaned accounts accumulate on the shared public site — mirroring the
+same discipline already established in the Account/Auth chunk. A cleanup pass hoisted the identical
+`generateFixtureAccount()` helper (which had turned up duplicated verbatim in both `login.spec.ts` and
+`account.spec.ts`) into a shared `tests/api/testData.ts` module, the API track's equivalent of
+`SignupPage.generateTestUser()` for the UI suite.
+
+Fully planned separately: see `specs/api.plan.md`.
+
+## 12. Next Steps
 
 This document defines scope and order only — no further test code is generated as part of this pass.
 Per the recommended build order in §3, the next chunk to plan is **Contact Us**
-(`specs/contact.plan.md` or similar), since it has no dependency on any other chunk and the two
-higher-priority prerequisites for Checkout/Orders — Account/Auth and Cart — are already implemented
-alongside Checkout/Orders itself. The **API Test Track** can also continue to be extended at any time
-in parallel, with no ordering dependency on the UI chunks.
+(`specs/contact.plan.md` or similar), since it has no dependency on any other chunk and every
+higher-priority chunk (all of P0 plus the API Test Track) is now implemented. **Cross-Page Navigation**
+and **Informational Pages** remain after that, in the order given in §3.

@@ -11,10 +11,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Home, Products, and API tests are read-only against the live site (no account
-  # creation, no cart/orders) — safe to run on every push/PR. Full cross-browser
-  # matrix on push (or schedule/manual dispatch); chromium-only on PR for fast
-  # feedback without tripling live-site traffic on every review iteration.
+  # Home, Products, and the read-only slice of the API track are read-only against
+  # the live site (no account creation, no cart/orders) — safe to run on every
+  # push/PR. Full cross-browser matrix on push (or schedule/manual dispatch);
+  # chromium-only on PR for fast feedback without tripling live-site traffic on
+  # every review iteration. Note: tests/api/login.spec.ts and
+  # tests/api/account.spec.ts create/delete real accounts via the API (createAccount/
+  # deleteAccount) and are deliberately excluded here — see mutating-suite below.
   read-only-suite:
     timeout-minutes: 60
     runs-on: ubuntu-latest
@@ -31,8 +34,8 @@ jobs:
       run: npm ci
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps ${{ matrix.browser }}
-    - name: Run read-only suite (Home, Products, API)
-      run: npx playwright test tests/ui/home tests/ui/products tests/api --project=${{ matrix.browser }}
+    - name: Run read-only suite (Home, Products, read-only API)
+      run: npx playwright test tests/ui/home tests/ui/products tests/api/products.spec.ts tests/api/brands.spec.ts tests/api/search.spec.ts --project=${{ matrix.browser }}
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
@@ -41,8 +44,10 @@ jobs:
         retention-days: 30
 
   # Account/Cart/Checkout create real accounts and place real orders against the
-  # live site. Never run these on push/PR — only on the weekly schedule or an
-  # explicit manual dispatch, to keep live-site volume to a minimum.
+  # live site, as do tests/api/login.spec.ts and tests/api/account.spec.ts
+  # (createAccount/deleteAccount via the API). Never run these on push/PR — only
+  # on the weekly schedule or an explicit manual dispatch, to keep live-site
+  # volume to a minimum.
   mutating-suite:
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     timeout-minutes: 60
@@ -60,8 +65,8 @@ jobs:
       run: npm ci
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps ${{ matrix.browser }}
-    - name: Run mutating suite (Account, Cart, Checkout)
-      run: npx playwright test tests/ui/account tests/ui/cart tests/ui/checkout --project=${{ matrix.browser }}
+    - name: Run mutating suite (Account, Cart, Checkout, mutating API)
+      run: npx playwright test tests/ui/account tests/ui/cart tests/ui/checkout tests/api/login.spec.ts tests/api/account.spec.ts --project=${{ matrix.browser }}
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
