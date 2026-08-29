@@ -38,7 +38,7 @@ Heal → Docs Sync).
 | 4 | Cart | `/view_cart` | **Implemented** |
 | 5 | Checkout / Orders | `/view_cart` → `/login` → `/payment` → order confirmation | **Implemented** |
 | 6 | Contact Us | `/contact_us` | **Implemented** |
-| 7 | Informational Pages (Test Cases, API Testing) | `/test_cases`, `/api_list` | Not yet planned |
+| 7 | Informational Pages (Test Cases, API Testing) | `/test_cases`, `/api_list` | **Implemented** |
 | 8 | API Test Track | `/api/*` (REST, no browser) | **Implemented** |
 | 9 | Cross-Page Navigation | all of the above | **Implemented** |
 
@@ -79,7 +79,7 @@ executions across chromium/firefox/webkit, all documented endpoints on `/api_lis
 - **Informational Pages** — `/test_cases` and `/api_list` are static documentation pages (client-side
   Bootstrap accordions, no backend calls). Coverage here is intentionally light: page-load and
   content-presence smoke checks only, not full interaction testing — these pages don't drive user
-  transactions.
+  transactions. Now implemented; see §13.
 - **API Test Track** — runs as `tests/api/**`, using Playwright's `request` fixture directly against
   the documented endpoints on `/api_list` (products, brands, search, login/account CRUD). This is a
   separate track from the UI suite: no browser, no Page Objects, faster and more stable. Now fully
@@ -106,11 +106,12 @@ non-transactional, or purely informational feature.
 | P1 — High | API Test Track | Fast, stable, high-value regression signal for the same core entities (products, brands, accounts) at a layer decoupled from UI flakiness; cheap to extend incrementally. **Done.** |
 | P2 — Medium | Contact Us | Self-contained lead-gen form; not on the purchase critical path. **Done.** |
 | P2 — Medium | Cross-Page Navigation | Valuable regression net once individual chunks exist, but by definition can't be built first and duplicates some coverage already in per-chunk plans. **Done.** |
-| P3 — Low | Informational Pages | Static documentation content; smoke-level checks only, no transactional risk. |
+| P3 — Low | Informational Pages | Static documentation content; smoke-level checks only, no transactional risk. **Done.** |
 
 **Recommended build order:** Home (done) → Account/Auth (done) → Product Catalog & Search (done) →
 Cart (done) → Checkout/Orders (done) → API Test Track (done, ran in parallel with no ordering
-dependency) → Contact Us (done) → Cross-Page Navigation (done) → Informational Pages.
+dependency) → Contact Us (done) → Cross-Page Navigation (done) → Informational Pages (done). All nine
+chunks in this strategy are now implemented.
 
 ## 4. Shared Technical Conventions
 
@@ -533,9 +534,53 @@ with how the same pattern was handled in the Account/Auth and Cart chunks.
 
 Fully planned separately: see `specs/navigation.plan.md`.
 
-## 13. Next Steps
+## 13. Informational Pages — Implemented
 
-This document defines scope and order only — no further test code is generated as part of this pass.
-Per the recommended build order in §3, all P0 and P1 chunks plus **Contact Us** and **Cross-Page
-Navigation** (P2) are now implemented. **Informational Pages** (Test Cases, API Testing) is the only
-remaining chunk, per the priority order in §3.
+**Status:** Fully planned (`specs/informational.plan.md`, 4 scenarios, all P3) and implemented across
+two spec files under `tests/ui/informational/` (`test-cases.spec.ts`, `api-list.spec.ts` — 4 tests
+total). Confirmed passing across chromium, firefox, and webkit (12/12, verified via one full run plus
+one isolated re-run of two firefox goto timeouts and one webkit click-instability failure, all three of
+which cleared cleanly on isolated re-run — see quirk below).
+
+Notable quirks captured during this chunk (relevant to conventions above): a new
+`tests/pages/InformationalPage.ts` was added, extending `BasePage` and reusing its existing
+`testCasesNavLink`/`apiTestingNavLink` header locators rather than redeclaring them. One shared,
+parameterized Page Object (not two separate classes) covers both `/test_cases` and `/api_list`, mirroring
+the same precedent already established by `ProductsPage.ts` covering both `/products` and
+`/brand_products/{Brand}` — live exploration confirmed both pages render from the literal same
+Bootstrap-accordion template, differing only in heading text, intro sentence, and item count (26 vs 14).
+Neither page carries any `data-qa`/`data-testid` attribute, consistent with Home/Products/Cart's
+already-documented zero-`data-qa` pattern rather than Login/Signup/Contact's. The plan's original
+assumption — that a collapsed accordion header link's own `class` attribute equals `'collapsed'` — did
+not hold live: both pages' `<a data-toggle="collapse">` elements always carry a null/empty `class`
+attribute; the actual collapsed/expanded marker lives entirely on the corresponding `#collapseN` panel
+`<div>` itself (`class="panel-collapse collapse"` vs `"panel-collapse in"`, matching computed `display`),
+so `InformationalPage.isAccordionItemCollapsed()` reads the panel's class instead of the link's — a
+generator-caught correction to the plan's assumption, not a site defect. Both pages are entirely
+client-side: expanding/collapsing an accordion item produces zero requests to any
+`automationexercise.com` endpoint. Accordion items on both pages are NOT a single-open group — each
+panel toggles independently, confirmed by expanding two items simultaneously and observing both remain
+visible at once; a second click on an already-open item's header collapses it again (plain toggle, not a
+one-shot reveal). Per this chunk's deliberately light-coverage mandate, only a representative 2-3 items
+per page are exercised for expand/collapse behavior (not all 26 Test Cases or all 14 API entries), plus
+a page-load/link-count/collapsed-by-default smoke check across every item's count and a first/middle/
+last spot-check — consistent with the strategy's "smoke checks only, not full interaction testing"
+scope. The `Feedback for Us` `mailto:` link present at the bottom of both pages is verified via its
+`href` attribute only, never clicked, per this project's scope discipline around not dispatching real
+external actions. One full-run flake surfaced during verification — two firefox `page.goto` timeouts
+plus one webkit accordion-click "element is not stable" failure, all on `api-list.spec.ts` — and all
+three cleared cleanly on an isolated re-run of just that file, matching the same live-site-under-
+concurrent-load flake pattern already documented for the Account/Auth, Cart, and Cross-Page Navigation
+chunks; no code or locator defect was found or changed.
+
+Fully planned separately: see `specs/informational.plan.md`.
+
+## 14. Next Steps
+
+All nine chunks defined in this strategy (§2/§3) are now implemented: Home Page, Account/Auth, Product
+Catalog & Search, Cart, Checkout/Orders, API Test Track, Contact Us, Cross-Page Navigation, and
+Informational Pages. There is no remaining chunk in this document's scope to plan or build next. Future
+work under this strategy would only be re-triggered by the application itself changing materially (a new
+feature/page added to the live site) or a maintenance need surfacing in an already-implemented chunk
+(a healed regression, a new shared Page Object helper, or a CI bucket re-check if a chunk's read-only/
+mutating character changes), not by any further "next chunk" in this priority order.
