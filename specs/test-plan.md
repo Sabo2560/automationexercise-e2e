@@ -676,3 +676,28 @@ work under this strategy would only be re-triggered by the application itself ch
 feature/page added to the live site) or a maintenance need surfacing in an already-implemented chunk
 (a healed regression, a new shared Page Object helper, or a CI bucket re-check if a chunk's read-only/
 mutating character changes), not by any further "next chunk" in this priority order.
+
+## 15. Mobile Viewport Coverage (added 2026-08-30)
+
+A senior-engineer review of this suite (2026-08-30) found the config had two mobile device projects
+(Pixel 5 / Mobile Chrome, iPhone 12 / Mobile Safari) commented out in `playwright.config.ts` — zero
+mobile/responsive coverage existed prior to this. Both projects are now enabled.
+
+**Deliberately scoped light for this first pass**, mirroring how the Informational Pages chunk started
+light: only the read-only core-journey files run on mobile — `tests/ui/home/**`, `tests/ui/products/**`,
+and the read-only slice of `tests/ui/cart/**` (`cart-empty`, `cart-display`, `cart-quantity`,
+`cart-delete`, `cart-checkout-gate`, `cart-subscription` — excludes `cart-search-login.spec.ts`, which
+creates a real account, kept off an unproven device profile for now). Checkout/Account are not run on
+mobile at all yet.
+
+Verified locally before enabling in CI: **54/54 passed** (27 tests × 2 device projects, zero healing
+needed) — the site's Bootstrap-based layout and this suite's role/id/class-based locators held up on
+both mobile viewports with no mobile-specific breakage found. Wired into
+`.github/workflows/playwright.yml` as a new `mobile-smoke` job, gated to schedule/`workflow_dispatch`
+only (same as `mutating-suite`) rather than every push/PR — both to keep CI runtime sane while this is a
+new, less-proven dimension, and to avoid running any account-touching semantics on it without a
+deliberate future decision to do so.
+
+**Not yet covered**: Checkout, Account/Auth, and TC20's `cart-search-login.spec.ts` on mobile; expanding
+`mobile-smoke`'s scope to these is a natural next step once this first pass has run cleanly on real CI
+a few times.

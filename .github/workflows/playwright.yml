@@ -86,3 +86,47 @@ jobs:
         name: playwright-report-mutating-${{ matrix.browser }}
         path: playwright-report/
         retention-days: 30
+
+  # Mobile Chrome (Pixel 5)/Mobile Safari (iPhone 12) are new device-emulation profiles
+  # added 2026-08-30 to close a coverage gap (the suite previously ran desktop viewports
+  # only). Deliberately scoped light for this first pass, mirroring how Informational
+  # Pages started light: only the read-only core-journey files (Home, Products, and the
+  # read-only slice of Cart -- excludes cart-search-login.spec.ts, which creates a real
+  # account) run here, not the full suite, since these spec files were only ever
+  # verified against desktop viewports and mobile-specific layout issues (overlapping
+  # nav, off-screen elements, tap-vs-click behavior) are expected to need their own
+  # healing pass before broadening scope. Gated to schedule/workflow_dispatch only, both
+  # to keep CI runtime sane while this dimension is new and to avoid running Cart's
+  # account-touching semantics on an unproven device profile without deliberate review.
+  mobile-smoke:
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 'engine' is the underlying browser Playwright installs (device emulation reuses
+        # the desktop engine's binary with a mobile viewport/UA, it isn't a separate
+        # download); 'device' is the project name declared in playwright.config.ts.
+        include:
+        - device: 'Mobile Chrome'
+          engine: chromium
+        - device: 'Mobile Safari'
+          engine: webkit
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    - name: Install dependencies
+      run: npm ci
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps ${{ matrix.engine }}
+    - name: Run mobile smoke suite (Home, Products, read-only Cart)
+      run: npx playwright test tests/ui/home tests/ui/products tests/ui/cart/cart-empty.spec.ts tests/ui/cart/cart-display.spec.ts tests/ui/cart/cart-quantity.spec.ts tests/ui/cart/cart-delete.spec.ts tests/ui/cart/cart-checkout-gate.spec.ts tests/ui/cart/cart-subscription.spec.ts --project="${{ matrix.device }}"
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-report-mobile-${{ matrix.device }}
+        path: playwright-report/
+        retention-days: 30
