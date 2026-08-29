@@ -189,14 +189,45 @@ that chunk's own planning pass — it is not uniform.
 
 ## 5. Home Page — Implemented
 
-**Status:** Fully planned (`specs/home.plan.md`, 6 scenarios, P0–P3) and implemented
-(`tests/ui/home/home.spec.ts`, `tests/pages/BasePage.ts`, `tests/pages/HomePage.ts`). Confirmed passing.
+**Status:** Fully planned (`specs/home.plan.md`, 8 scenarios, P0–P3) and implemented across three spec
+files under `tests/ui/home/` (`home.spec.ts`, `home-recommended-items.spec.ts`, `home-scroll.spec.ts`),
+plus `tests/pages/BasePage.ts` and `tests/pages/HomePage.ts`. Confirmed passing across chromium,
+firefox, and webkit.
 
 Notable quirks captured during this chunk (relevant to conventions above): no `data-qa` attributes
 anywhere on the home page; header nav item accessible names carry a leading icon-font glyph that must
 be stripped before text comparison; the newsletter subscription widget is entirely client-side (no
 backend endpoint) and validated via native HTML5 `ValidityState`, not network assertions; the
 scroll-to-top control is present in the DOM at all times, gated only by CSS `display`.
+
+Two audit-gap scenarios (1.7 TC22, 1.8 TC26) were added in a later pass, closing gaps found against
+AutomationExercise's official Test Cases list. `home-recommended-items.spec.ts` (TC22) confirms the
+"recommended items" carousel's Add to Cart control (sharing the same `.add-to-cart`/`data-product-id`
+markup as the main Features Items grid) correctly adds the currently-active group's product and that
+it renders correctly in the cart afterward, handling the carousel's confirmed non-deterministic
+default-active-group behavior by checking which group is visible before asserting on it.
+`home-scroll.spec.ts` (TC26) confirms plain native browser scrolling (`window.scrollTo`/wheel) moves
+the page down and back up correctly, independent of the `#scrollUp` arrow control. A genuine,
+firefox-only, deterministic test-side defect was found and fixed here: `BasePage.scrollToBottom()`
+used a large-delta synthetic `page.mouse.wheel(0, 20000)` with no wait afterward; Firefox's
+wheel-event emulation was confirmed to genuinely plateau at a fixed intermediate scroll offset
+regardless of how many wheel events were re-dispatched — a Firefox input-emulation limitation, not a
+site scroll-jacking bug, since a direct `window.scrollTo` call reliably reaches the exact requested
+offset on this site in every browser. Fixed by switching `scrollToBottom()` to
+`window.scrollTo(0, document.body.scrollHeight)` plus a new, generic, polling-based
+`BasePage.waitForScrollToSettle()` helper (used by both `scrollToBottom()` and
+`scrollToTopManually()`) that waits for `window.scrollY` to stop changing rather than assuming any
+engine applies a scroll request synchronously — no magic pixel threshold, no browser-specific branch.
+Re-verified passing on chromium, firefox, and webkit for both `home-scroll.spec.ts` and the unaffected
+`home.spec.ts` call site.
+
+NOTE (pre-existing gap, outside this pass's scope): `specs/home.plan.md` also documents scenarios 1.2
+(header navigation), 1.3–1.5 (subscription accept/empty/malformed), and 1.6 (scroll-to-top button
+appears/functions) — as of this pass, only 1.2 (header navigation) is independently covered elsewhere
+(by the Cross-Page Navigation chunk's own suite); the subscription and scroll-to-top-button scenarios
+are not implemented under any spec file found in this repository. This predates and is unrelated to the
+TC11/TC19/TC20/TC22/TC26 gap-closing pass that produced this update; flagged here for awareness rather
+than silently left unmentioned or fixed as a side effect.
 
 Fully planned separately: see `specs/home.plan.md`.
 
@@ -235,10 +266,11 @@ Fully planned separately: see `specs/account.plan.md`.
 
 ## 7. Product Catalog & Search — Implemented
 
-**Status:** Fully planned (`specs/products.plan.md`, 12 scenarios, P0–P3) and implemented across six
+**Status:** Fully planned (`specs/products.plan.md`, 13 scenarios, P0–P3) and implemented across six
 spec files under `tests/ui/products/` (`products-listing.spec.ts`, `products-category.spec.ts`,
 `products-search.spec.ts`, `products-brand.spec.ts`, `product-details.spec.ts`, `product-review.spec.ts`
-— 12 tests total). Confirmed passing across chromium, firefox, and webkit.
+— 13 tests total, `products-brand.spec.ts` now holding two). Confirmed passing across chromium,
+firefox, and webkit.
 
 Notable quirks captured during this chunk (relevant to conventions above): two new page objects were
 added, `tests/pages/ProductsPage.ts` (covers both `/products` and `/brand_products/{Brand}` — same
@@ -269,15 +301,26 @@ across two separate spec files (`products-listing.spec.ts`'s "View Product" link
 duplicated per file, per this project's shared-pattern convention — it benefits every chunk's webkit
 runs going forward, not just this one.
 
+An audit-gap scenario (3.2, TC19 "View & Cart Brand Products") was added to `products-brand.spec.ts`
+in a later pass: navigating to a brand-filtered listing (`/brand_products/Polo`), viewing one of its
+products' detail page, adding it to cart with a custom quantity, and confirming the resulting cart row
+(name/href/category/unit price/quantity/line total) is correct — reusing `ProductsPage`,
+`ProductDetailsPage`, and `CartPage` as-is, with no new Page Object methods needed. The test is
+anonymous (no account created), so it cleans up by deleting the cart item it added
+(`cartPage.deleteItem(8)`) at the end rather than via an account-deletion step. Confirmed passing
+across chromium, firefox, and webkit.
+
 Fully planned separately: see `specs/products.plan.md`.
 
 ## 8. Cart — Implemented
 
-**Status:** Fully planned (`specs/cart.plan.md`, 5 scenario groups, 7 scenarios, P0–P2) and
-implemented across five spec files under `tests/ui/cart/` (`cart-empty.spec.ts`, `cart-display.spec.ts`,
-`cart-quantity.spec.ts`, `cart-delete.spec.ts`, `cart-checkout-gate.spec.ts` — 7 tests total).
-Confirmed passing across chromium, firefox, and webkit (21/21 in a full run across all three
-projects).
+**Status:** Fully planned (`specs/cart.plan.md`, 7 scenario groups, 9 scenarios, P0–P2) and
+implemented across seven spec files under `tests/ui/cart/` (`cart-empty.spec.ts`, `cart-display.spec.ts`,
+`cart-quantity.spec.ts`, `cart-delete.spec.ts`, `cart-checkout-gate.spec.ts`, `cart-subscription.spec.ts`,
+`cart-search-login.spec.ts` — 9 tests total). Confirmed passing across chromium, firefox, and webkit
+(21/21 for the original five files in a full run across all three projects; the two later audit-gap
+files were verified together with two other chunks' audit-gap files in an 18/18 targeted run across
+all three projects — see the paragraph below).
 
 Notable quirks captured during this chunk (relevant to conventions above): a new `tests/pages/CartPage.ts`
 was added, extending `BasePage` and reusing the existing `tests/pages/ProductDetailsPage.ts` for all
@@ -296,6 +339,32 @@ toggle (`#checkoutModal`) with no backend request at all when not logged in — 
 `cart-checkout-gate.spec.ts` during the full-suite run (modal never became visible within the timeout)
 but passed cleanly on an immediate isolated re-run — matches the same live-site-under-load flake pattern
 already documented for the Account/Auth chunk, not a code or locator defect.
+
+Two audit-gap scenario groups were added in a later pass, closing gaps found against
+AutomationExercise's official Test Cases list. Section 6 (6.1, TC11) — `cart-subscription.spec.ts` —
+confirms the footer Subscription widget on `/view_cart` is the literal same shared component already
+fully covered by `specs/home.plan.md`'s own widget tests (identical `#susbscribe_email`/`#subscribe`
+ids, identical client-side-only behavior, no backend `/subscribe` request), adding one smoke-level
+scenario confirming it also works on this page rather than duplicating Home's edge-case matrix.
+Section 7 (7.1, TC20) — `cart-search-login.spec.ts` — is P0: it registers a disposable account, logs
+out, searches and adds a product to the cart as a genuine anonymous/guest user, logs back in via the
+header-nav login path (`/login` -> `LoginPage.loginWithCredentials`, a distinct code path from the
+cart's own `#checkoutModal` login link already covered by `cart-checkout-gate.spec.ts`), and confirms
+the item added anonymously survived the login boundary intact in the merged cart — then deletes the
+disposable account (`deleteAccountNavLink`) while that merged cart still holds the item, confirming
+account deletion isn't blocked by live cart contents. This file creates and deletes a real account, so
+it correctly belongs in the mutating-suite CI bucket; `.github/workflows/playwright.yml` already runs
+the entire `tests/ui/cart` directory in its `mutating-suite` job (not filtered by individual file), so
+this new file is already covered with no workflow change needed — confirmed by inspection of the
+workflow's run command.
+
+`cart-search-login.spec.ts` showed a firefox-only failure during this pass with a different symptom
+each time it was observed failing (in this pass: a "View Product" click not resulting in the expected
+`/product_details/{id}` navigation, while running concurrently alongside another spec file) — an
+isolated single-file re-run on firefox immediately passed cleanly. This matches the same
+live-site-under-concurrent-load flake pattern already documented for the Account/Auth, Cart
+(`cart-checkout-gate.spec.ts`), Cross-Page Navigation, and Informational Pages chunks; no code or
+locator defect was found or changed.
 
 Fully planned separately: see `specs/cart.plan.md`.
 

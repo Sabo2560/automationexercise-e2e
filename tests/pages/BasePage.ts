@@ -99,9 +99,62 @@ export class BasePage {
     await this.subscribeButton.click();
   }
 
-  /** Scroll to the bottom of the page (used to reveal the scroll-to-top button). */
+  /**
+   * Scroll to the bottom of the page (used to reveal the scroll-to-top button). Deliberately
+   * uses `window.scrollTo` against the document's own measured height rather than a synthetic
+   * `mouse.wheel()` delta: confirmed live that Firefox's wheel-event emulation doesn't reliably
+   * apply a large requested delta in one dispatch (it can settle well short of the page's true
+   * bottom, and re-dispatching more wheel events doesn't move it further either — a Firefox
+   * input-emulation limitation, not a site scroll-jacking behavior, since a direct
+   * `window.scrollTo` call reliably reaches the exact requested offset on this site).
+   * Measuring `document.body.scrollHeight` instead of a fixed offset keeps this generic across
+   * any page height, browser, or call site.
+   */
   async scrollToBottom() {
-    await this.page.mouse.wheel(0, 20000);
+    await this.page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await this.waitForScrollToSettle();
+  }
+
+  /**
+   * Scroll back to the top of the page using only native scroll mechanics
+   * (window.scrollTo) — deliberately never via clicking `scrollToTopButton` (#scrollUp).
+   * Added for the "plain native scroll, independent of the arrow control" scenario
+   * (Home chunk, TC26 audit gap) so that scenario has no reason to ever reference the
+   * button locator.
+   */
+  async scrollToTopManually() {
+    await this.page.evaluate(() => window.scrollTo(0, 0));
+    await this.waitForScrollToSettle();
+  }
+
+  /**
+   * Wait for `window.scrollY` to stop changing after triggering a native scroll (wheel event
+   * or window.scrollTo) — some engines apply scroll requests via an async smooth-scroll
+   * animation, so `window.scrollY` can still read a stale/mid-animation value for a while after
+   * the triggering call resolves. Polls scrollY every 100ms and requires 3 consecutive matching
+   * reads (300ms of no movement) before considering it settled — a single-frame
+   * `requestAnimationFrame` poll isn't enough here because a still-animating scroll can
+   * coincidentally report the same value on two consecutive rAF ticks and report false
+   * settling; spacing reads further apart and requiring a longer stable run avoids that,
+   * without any fixed sleep or browser-specific branch, so it settles as soon as the scroll
+   * actually finishes regardless of engine or target offset.
+   */
+  private async waitForScrollToSettle() {
+    await this.page.waitForFunction(
+      () => {
+        const w = window as unknown as { __scrollSettleY?: number; __scrollSettleCount?: number };
+        const current = window.scrollY;
+        if (w.__scrollSettleY === current) {
+          w.__scrollSettleCount = (w.__scrollSettleCount ?? 0) + 1;
+        } else {
+          w.__scrollSettleY = current;
+          w.__scrollSettleCount = 0;
+        }
+        return (w.__scrollSettleCount ?? 0) >= 3;
+      },
+      undefined,
+      { polling: 100 },
+    );
   }
 
   /**
