@@ -26,3 +26,43 @@ test.describe('Plain Browser Scroll (TC26 audit gap)', () => {
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
   });
 });
+
+test.describe('Scroll-to-Top Button (scenario 1.6)', () => {
+  test('Scroll-to-top button appears on scroll and returns the page to the top', async ({ page }) => {
+    const homePage = new HomePage(page);
+
+    // 1. On a freshly loaded home page, confirm the scroll-to-top button (#scrollUp) is present
+    // in the DOM but not visible (CSS display equals 'none') before any scrolling occurs.
+    await homePage.gotoHome();
+    await expect(homePage.scrollToTopButton).not.toBeVisible();
+    expect(
+      await homePage.scrollToTopButton.evaluate((el) => getComputedStyle(el).display),
+    ).toBe('none');
+
+    // 2. Scroll the page down by at least 2000px.
+    await homePage.scrollToBottom();
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThanOrEqual(2000);
+
+    // 3. Confirm #scrollUp's computed display style equals 'block' (control becomes visible)
+    // once window.scrollY exceeds the reveal threshold.
+    await expect(homePage.scrollToTopButton).toBeVisible();
+    expect(
+      await homePage.scrollToTopButton.evaluate((el) => getComputedStyle(el).display),
+    ).toBe('block');
+
+    // 4. Click the now-visible scroll-to-top button and wait for the scroll animation to
+    // complete. This is a distinct interaction path (clicking the arrow control itself) from
+    // scrollToTopManually(), which deliberately never touches the button.
+    await homePage.scrollToTopButton.click();
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY), {
+        message: 'window.scrollY should settle back to 0 after clicking #scrollUp',
+        timeout: 10_000,
+      })
+      .toBe(0);
+
+    // expect: window.scrollY equals 0 after the animation finishes, i.e. the page has returned
+    // exactly to the top.
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  });
+});

@@ -189,10 +189,12 @@ that chunk's own planning pass — it is not uniform.
 
 ## 5. Home Page — Implemented
 
-**Status:** Fully planned (`specs/home.plan.md`, 8 scenarios, P0–P3) and implemented across three spec
-files under `tests/ui/home/` (`home.spec.ts`, `home-recommended-items.spec.ts`, `home-scroll.spec.ts`),
+**Status:** Fully planned (`specs/home.plan.md`, 8 scenarios, P0–P3) and implemented across four spec
+files under `tests/ui/home/` (`home.spec.ts`, `home-subscription.spec.ts`, `home-recommended-items.spec.ts`,
+`home-scroll.spec.ts` — 8 tests total, `home-scroll.spec.ts` now holding two independent scenarios),
 plus `tests/pages/BasePage.ts` and `tests/pages/HomePage.ts`. Confirmed passing across chromium,
-firefox, and webkit.
+firefox, and webkit (15/15 in a targeted run of the two most-recently-added files; the rest of the
+chunk was previously confirmed green and untouched by this pass).
 
 Notable quirks captured during this chunk (relevant to conventions above): no `data-qa` attributes
 anywhere on the home page; header nav item accessible names carry a leading icon-font glyph that must
@@ -221,13 +223,34 @@ engine applies a scroll request synchronously — no magic pixel threshold, no b
 Re-verified passing on chromium, firefox, and webkit for both `home-scroll.spec.ts` and the unaffected
 `home.spec.ts` call site.
 
-NOTE (pre-existing gap, outside this pass's scope): `specs/home.plan.md` also documents scenarios 1.2
-(header navigation), 1.3–1.5 (subscription accept/empty/malformed), and 1.6 (scroll-to-top button
-appears/functions) — as of this pass, only 1.2 (header navigation) is independently covered elsewhere
-(by the Cross-Page Navigation chunk's own suite); the subscription and scroll-to-top-button scenarios
-are not implemented under any spec file found in this repository. This predates and is unrelated to the
-TC11/TC19/TC20/TC22/TC26 gap-closing pass that produced this update; flagged here for awareness rather
-than silently left unmentioned or fixed as a side effect.
+A further pre-existing gap (scenarios 1.3–1.6: subscription accept/empty/malformed, and the scroll-to-top
+button) was closed in a later pass (2026-08-29). Scenario 1.2 (header navigation) remains intentionally
+out of scope here, independently covered by the Cross-Page Navigation chunk's own suite (`nav-*.spec.ts`)
+as already noted above.
+
+`home-subscription.spec.ts` (1.3/1.4/1.5) implements the footer newsletter widget's three cases: valid
+email accepted, empty email blocked, malformed email blocked. Re-verifying live ahead of generation
+surfaced one genuine correction to the plan's original assumption: the success alert (`.alert-success`)
+does not clear the email input immediately — both the alert's auto-hide and the input reset happen
+together in the same ~1500ms `setTimeout` callback inside `static/js/subscription.js`. The valid-email
+test now asserts the alert becomes visible first, waits for it to become hidden again (>1500ms), and only
+then asserts the input has reset to `''`, rather than asserting the reset immediately after submission
+(which would have failed deterministically). The two rejection scenarios (empty/malformed) were
+re-confirmed unchanged: both are blocked by native HTML5 constraint validation (`validity.valueMissing` /
+`validity.typeMismatch`) with the alert never becoming visible; no backend request occurs in any of the
+three cases, consistent with the widget's already-documented client-side-only behavior.
+
+Scenario 1.6 (scroll-to-top button appears on scroll and returns to top) was added as a second,
+independent `test.describe` block inside the existing `home-scroll.spec.ts`, deliberately kept distinct
+from that file's original TC26 test: 1.6 specifically clicks the `#scrollUp` arrow control (asserting its
+computed `display` toggles `none` -> `block` past the reveal threshold, then that clicking it settles
+`window.scrollY` back to `0`), whereas the original TC26 test deliberately never touches that button,
+proving native scroll mechanics work independently of it. Both re-verified live immediately before
+generation with no further corrections needed. No new Page Object methods were required for either file —
+`home-subscription.spec.ts` and the 1.6 addition reuse `HomePage`/`BasePage`'s existing
+`subscribeEmailInput`/`subscribeButton`/`subscribeSuccessAlert`/`subscribe()`/`scrollToTopButton`/
+`scrollToBottom()`/`gotoHome()` as-is. This closes the pre-existing gap previously flagged in this
+section; every scenario in `specs/home.plan.md` is now implemented under `tests/ui/home/`.
 
 Fully planned separately: see `specs/home.plan.md`.
 
