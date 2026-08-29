@@ -10,8 +10,8 @@ Genuine site defects (invalid/duplicate HTML, mislabeled UI, broken interactions
 building this suite are tracked here. UX quirks or design choices that are not defects are documented
 in `specs/test-plan.md` instead, not listed here.
 
-None found yet across the Home Page, Account/Auth, Product Catalog & Search, Cart, Checkout/Orders, and
-Contact Us chunks. (One unconfirmed observation from Product Catalog & Search — the product review form's success
+None found yet across the Home Page, Account/Auth, Product Catalog & Search, Cart, Checkout/Orders,
+Contact Us, and Cross-Page Navigation chunks. (One unconfirmed observation from Product Catalog & Search — the product review form's success
 alert never became visible in any exploration/generation attempt — is not listed here because its
 classification as a genuine defect vs. an anti-automation gate is not yet clear; see
 `specs/test-plan.md` §7. A second unconfirmed observation from Checkout/Orders — occasional

@@ -40,7 +40,7 @@ Heal → Docs Sync).
 | 6 | Contact Us | `/contact_us` | **Implemented** |
 | 7 | Informational Pages (Test Cases, API Testing) | `/test_cases`, `/api_list` | Not yet planned |
 | 8 | API Test Track | `/api/*` (REST, no browser) | **Implemented** |
-| 9 | Cross-Page Navigation | all of the above | Not yet planned |
+| 9 | Cross-Page Navigation | all of the above | **Implemented** |
 
 Chunk 1 (Home) already has `specs/home.plan.md`, `tests/pages/BasePage.ts`, `tests/pages/HomePage.ts`,
 and `tests/ui/home/home.spec.ts` implemented and passing — treat it as the first completed chunk under
@@ -105,12 +105,12 @@ non-transactional, or purely informational feature.
 | P0 — Critical | Checkout / Orders | Core business transaction of the site; highest business impact if broken, but can only be planned once Account and Cart are stable (its Page Object composes both). |
 | P1 — High | API Test Track | Fast, stable, high-value regression signal for the same core entities (products, brands, accounts) at a layer decoupled from UI flakiness; cheap to extend incrementally. **Done.** |
 | P2 — Medium | Contact Us | Self-contained lead-gen form; not on the purchase critical path. **Done.** |
-| P2 — Medium | Cross-Page Navigation | Valuable regression net once individual chunks exist, but by definition can't be built first and duplicates some coverage already in per-chunk plans. |
+| P2 — Medium | Cross-Page Navigation | Valuable regression net once individual chunks exist, but by definition can't be built first and duplicates some coverage already in per-chunk plans. **Done.** |
 | P3 — Low | Informational Pages | Static documentation content; smoke-level checks only, no transactional risk. |
 
 **Recommended build order:** Home (done) → Account/Auth (done) → Product Catalog & Search (done) →
 Cart (done) → Checkout/Orders (done) → API Test Track (done, ran in parallel with no ordering
-dependency) → Contact Us (done) → Cross-Page Navigation → Informational Pages.
+dependency) → Contact Us (done) → Cross-Page Navigation (done) → Informational Pages.
 
 ## 4. Shared Technical Conventions
 
@@ -487,11 +487,55 @@ same discipline already established in the Account/Auth chunk. A cleanup pass ho
 
 Fully planned separately: see `specs/api.plan.md`.
 
-## 12. Next Steps
+## 12. Cross-Page Navigation — Implemented
+
+**Status:** Fully planned (`specs/navigation.plan.md`, 7 scenarios, P0/P0/P1/P1/P1/P2/P2) and
+implemented across seven spec files under `tests/ui/navigation/` (`nav-internal-links.spec.ts`,
+`nav-external-link.spec.ts`, `nav-cross-page-presence.spec.ts`, `nav-gated-flow-presence.spec.ts`,
+`nav-browser-back.spec.ts`, `nav-reclick.spec.ts`, `nav-auth-state.spec.ts` — 7 tests total). Confirmed
+passing across chromium, firefox, and webkit (21/21 in a full run across all three projects, with one
+test individually re-fixed and re-confirmed afterward — see quirk below).
+
+Notable quirks captured during this chunk (relevant to conventions above): no new Page Object class was
+needed — every scenario reuses `HomePage`/`ProductsPage`/`CartPage`/`LoginPage`/`SignupPage`/
+`CheckoutPage`/`ContactUsPage`, all of which already extend `BasePage`. Two small generic helpers were
+added to `BasePage.ts`: `getHref(link)` (read a nav link's `href` without clicking it — used to verify
+the Video Tutorials external link is never followed) and `clickNavAndExpectUrl(link, expectedUrlPattern)`
+(centralizes the `Promise.all([page.waitForURL(...), link.click()])` pattern shared by every
+internal-link and cross-page-presence check, instead of duplicating it per spec file). The header nav
+bar was confirmed live to be uniform across every page checked, including the two deepest gated pages
+(`/checkout`, `/payment`) reached via a real logged-in add-to-cart → checkout → payment flow — no
+absence/difference was found anywhere. The Video Tutorials link is a same-tab external link with no
+`target`/`rel` attribute at all (not a new-tab link as might be assumed), so it is verified via `href`
+value only, never clicked. The Signup/Login nav item is fully replaced by three separate items once
+logged in (`Logout`, `Delete Account`, `Logged in as {name}`), and Delete Account both removes the
+account and ends the session in the same action, reverting the nav to its logged-out state with no
+separate logout step needed. Browser back-navigation (`page.goBack()`) was confirmed clean for all 8
+header links (all are plain `<a href>` full-page GET navigations, not client-side route changes), spot-
+checked on one representative multi-hop chain rather than all 8 individually, per equivalence
+partitioning. Of the 7 files, `nav-auth-state.spec.ts` and `nav-gated-flow-presence.spec.ts` are the only
+two that create (and delete) a real disposable account, matching `SignupPage.generateTestUser()`'s
+pattern; the other 5 are pure read-only navigation/presence checks with no account or order creation.
+
+One test-design issue was found and healed: `nav-internal-links.spec.ts` performs 13 sequential
+full-page navigations against the live site in a single test (the heaviest file in this suite by a wide
+margin) and was intermittently hitting the default 30s test-level timeout partway through the sequence,
+reproducing 3/3 times on an isolated firefox-only run before the fix (chromium/webkit had passed
+reliably at that point). `test.setTimeout(90_000)` was added, scoped to just this one test, and an
+isolated single-test/single-project re-run on firefox confirmed the fix (32.9s, well within budget).
+Separately, when this same file was re-run concurrently alongside other tests under this project's
+standard 2-worker setting, occasional 30s-class timeouts on `page.goto` resurfaced across all three
+browsers, not just firefox — this matches the same live-site-under-concurrent-load flake pattern
+already documented for the Account/Auth and Cart chunks (occasional timeout, always clears on a true
+isolated single-test re-run, not a locator/code defect), simply more exposed here due to this file's
+unusually high navigation volume per test. No further code change was made for that pattern, consistent
+with how the same pattern was handled in the Account/Auth and Cart chunks.
+
+Fully planned separately: see `specs/navigation.plan.md`.
+
+## 13. Next Steps
 
 This document defines scope and order only — no further test code is generated as part of this pass.
-Per the recommended build order in §3, all P0 and P1 chunks plus **Contact Us** (P2) are now
-implemented. The next chunk to plan is **Cross-Page Navigation** (`specs/cross-navigation.plan.md` or
-similar), since every chunk's Page Object it needs to reuse (Home, Account/Auth, Products, Cart,
-Checkout, Contact Us) now exists. **Informational Pages** (Test Cases, API Testing) remains after that,
-per the priority order in §3.
+Per the recommended build order in §3, all P0 and P1 chunks plus **Contact Us** and **Cross-Page
+Navigation** (P2) are now implemented. **Informational Pages** (Test Cases, API Testing) is the only
+remaining chunk, per the priority order in §3.

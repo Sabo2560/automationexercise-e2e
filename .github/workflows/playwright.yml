@@ -20,7 +20,11 @@ jobs:
   # without tripling live-site traffic on every review iteration. Note:
   # tests/api/login.spec.ts and tests/api/account.spec.ts create/delete real accounts
   # via the API (createAccount/deleteAccount) and are deliberately excluded here — see
-  # mutating-suite below.
+  # mutating-suite below. Cross-Page Navigation is bucketed by file, not by chunk: 5 of
+  # its 7 spec files are pure nav-contract/presence checks with no account creation
+  # (nav-internal-links, nav-external-link, nav-cross-page-presence, nav-browser-back,
+  # nav-reclick); the other 2 (nav-auth-state, nav-gated-flow-presence) create/delete a
+  # real disposable account and belong in the mutating bucket below instead.
   read-only-suite:
     timeout-minutes: 60
     runs-on: ubuntu-latest
@@ -37,8 +41,8 @@ jobs:
       run: npm ci
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps ${{ matrix.browser }}
-    - name: Run read-only suite (Home, Products, Contact Us, read-only API)
-      run: npx playwright test tests/ui/home tests/ui/products tests/ui/contact tests/api/products.spec.ts tests/api/brands.spec.ts tests/api/search.spec.ts --project=${{ matrix.browser }}
+    - name: Run read-only suite (Home, Products, Contact Us, read-only API, read-only Navigation)
+      run: npx playwright test tests/ui/home tests/ui/products tests/ui/contact tests/api/products.spec.ts tests/api/brands.spec.ts tests/api/search.spec.ts tests/ui/navigation/nav-internal-links.spec.ts tests/ui/navigation/nav-external-link.spec.ts tests/ui/navigation/nav-cross-page-presence.spec.ts tests/ui/navigation/nav-browser-back.spec.ts tests/ui/navigation/nav-reclick.spec.ts --project=${{ matrix.browser }}
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
@@ -48,9 +52,12 @@ jobs:
 
   # Account/Cart/Checkout create real accounts and place real orders against the
   # live site, as do tests/api/login.spec.ts and tests/api/account.spec.ts
-  # (createAccount/deleteAccount via the API). Never run these on push/PR — only
-  # on the weekly schedule or an explicit manual dispatch, to keep live-site
-  # volume to a minimum.
+  # (createAccount/deleteAccount via the API), as do 2 of Cross-Page Navigation's 7
+  # spec files (nav-auth-state.spec.ts, nav-gated-flow-presence.spec.ts — each
+  # registers and deletes one disposable account to reach the logged-in/checkout nav
+  # states; the other 5 nav spec files are read-only, see read-only-suite above).
+  # Never run these on push/PR — only on the weekly schedule or an explicit manual
+  # dispatch, to keep live-site volume to a minimum.
   mutating-suite:
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     timeout-minutes: 60
@@ -68,8 +75,8 @@ jobs:
       run: npm ci
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps ${{ matrix.browser }}
-    - name: Run mutating suite (Account, Cart, Checkout, mutating API)
-      run: npx playwright test tests/ui/account tests/ui/cart tests/ui/checkout tests/api/login.spec.ts tests/api/account.spec.ts --project=${{ matrix.browser }}
+    - name: Run mutating suite (Account, Cart, Checkout, mutating API, mutating Navigation)
+      run: npx playwright test tests/ui/account tests/ui/cart tests/ui/checkout tests/api/login.spec.ts tests/api/account.spec.ts tests/ui/navigation/nav-auth-state.spec.ts tests/ui/navigation/nav-gated-flow-presence.spec.ts --project=${{ matrix.browser }}
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:

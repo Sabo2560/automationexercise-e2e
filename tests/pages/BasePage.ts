@@ -103,4 +103,22 @@ export class BasePage {
   async scrollToBottom() {
     await this.page.mouse.wheel(0, 20000);
   }
+
+  /**
+   * Generic attribute getter, primarily used to read a nav link's `href` without clicking
+   * it (e.g. the external Video Tutorials link, which must never be followed).
+   */
+  async getHref(link: Locator): Promise<string | null> {
+    return link.getAttribute('href');
+  }
+
+  /**
+   * Click a nav item and wait for the resulting URL to match `expectedUrlPattern`. Centralizes
+   * the "click a nav link, then wait for navigation" pattern shared by every internal-link and
+   * cross-page nav-presence check in the navigation contract suite, instead of duplicating
+   * `Promise.all([page.waitForURL(...), link.click()])` across each spec file.
+   */
+  async clickNavAndExpectUrl(link: Locator, expectedUrlPattern: RegExp) {
+    await Promise.all([this.page.waitForURL(expectedUrlPattern), link.click()]);
+  }
 }
