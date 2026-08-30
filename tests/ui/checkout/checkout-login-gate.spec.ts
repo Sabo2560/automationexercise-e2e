@@ -117,6 +117,6 @@ test.describe('Checkout / Orders', () => {
     // deleted!' text are shown, matching the cleanup pattern used in every other chunk that
     // creates a disposable account.
     await expect(signupPage.accountDeletedHeading).toBeVisible();
-    await expect(page.getByText('Your account has been permanently deleted!')).toBeVisible();
+    await expect(signupPage.accountDeletedConfirmationText).toBeVisible();
   });
 });

@@ -389,14 +389,21 @@ live-site-under-concurrent-load flake pattern already documented for the Account
 (`cart-checkout-gate.spec.ts`), Cross-Page Navigation, and Informational Pages chunks; no code or
 locator defect was found or changed.
 
+**Coupon/discount/promo-code feature — confirmed absent (2026-08-30):** investigated as part of the
+Checkout/Orders chunk's gap-closing pass (see §9), since the question spans both `/view_cart` and
+`/checkout`. A full-page scan of `/view_cart` (visible text search for "coupon"/"discount"/"promo", plus
+a DOM attribute/class/id scan) found zero matches — no coupon input field, no "have a coupon?" link, no
+promo banner. No scenario is added here for it, since the feature is confirmed absent rather than merely
+unobserved. Full detail and the parallel `/checkout` finding are in §9.
+
 Fully planned separately: see `specs/cart.plan.md`.
 
 ## 9. Checkout / Orders — Implemented
 
-**Status:** Fully planned (`specs/checkout.plan.md`, 3 scenarios, P0/P0/P2) and implemented across
-three spec files under `tests/ui/checkout/` (`checkout-happy-path.spec.ts`, `checkout-login-gate.spec.ts`,
-`checkout-payment-validation.spec.ts` — 3 tests total). Confirmed passing across chromium, firefox, and
-webkit (9/9 in a full run across all three projects).
+**Status:** Fully planned (`specs/checkout.plan.md`, 4 scenarios, P0/P0/P2/P1) and implemented across
+four spec files under `tests/ui/checkout/` (`checkout-happy-path.spec.ts`, `checkout-login-gate.spec.ts`,
+`checkout-payment-validation.spec.ts`, `checkout-multi-item-total.spec.ts` — 4 tests total). Confirmed
+passing across chromium, firefox, and webkit (12/12 in a full run across all three projects).
 
 Notable quirks captured during this chunk (relevant to conventions above): a new
 `tests/pages/CheckoutPage.ts` was added, extending `BasePage` and composing `CartPage`/`LoginPage`/
@@ -505,6 +512,44 @@ interprets the `Content-Disposition` header — noted here as a plausible root c
 escalated to `README.md`, since this project doesn't control automationexercise.com's markup and the
 current test-side handling is a normal, low-risk cross-browser behavior difference rather than a
 mislabeled/broken/invalid-HTML site defect.
+
+**Gap-closing pass (2026-08-30):** a senior-engineer review flagged that the order-review table's
+"Total Amount" row on `/checkout` had only ever been confirmed correct for a single-item cart (Rs. 500
+== Rs. 500) — multi-item summation across 2+ differently-priced items was assumed correct by analogy
+to the Cart page's own per-row math (a different page/component) rather than directly verified. This is
+now closed by scenario 1.4 (`checkout-multi-item-total.spec.ts`): a disposable account adds product 1
+('Blue Top', Rs. 500) and product 2 ('Men Tshirt', Rs. 400) to the cart, reaches `/checkout`, and
+confirms the Total Amount row equals the arithmetic sum of the two product rows' own line totals — the
+expected total is derived programmatically from each row's own observed price text at runtime (never a
+hardcoded literal), so the assertion remains valid even if the site's own prices change. This scenario
+deliberately stops at the `/checkout` review step (no "Place Order", no `/payment`): confirming the
+arithmetic at the review table is sufficient to close the named gap, and the full order+payment+invoice
+path is already independently proven end-to-end by scenario 1.1 — so this pass places **zero** additional
+real orders (not even the one originally budgeted for it), only one more disposable account
+create+delete, matching this project's live-site volume discipline. `CheckoutPage.ts` gained one new
+locator for this, `productRows` (all product rows in the order-review table at once, distinct from the
+single-row-oriented locators scenarios 1.1–1.3 already used), added alongside the existing locators
+rather than replacing any of them.
+
+**Coupon/discount/promo-code feature — confirmed absent:** the same review asked whether
+automationexercise.com has any coupon/discount/promo-code affordance anywhere in the cart or checkout
+flow; this had never been explicitly investigated. A full-page scan (visible text search for "coupon"/
+"discount"/"promo", plus a DOM attribute/class/id scan) of both `/view_cart` and `/checkout` found zero
+matches on either page — no coupon input field, no "have a coupon?" link, no promo banner. This is
+confirmed absent, not merely unobserved, so no scenario is added for it in either `specs/checkout.plan.md`
+or `specs/cart.plan.md`. (Aside, unrelated to this chunk: a "Grab Retail Coupons" link was noticed on the
+separate `/account_created` page during this exploration — out of scope for both the Cart and Checkout
+chunks, not investigated further.)
+
+A cleanup spot-check across this chunk's now-four spec files found the same two-line disposable-account-
+deletion confirmation (`signupPage.accountDeletedHeading` + a raw `page.getByText('Your account has been
+permanently deleted!')` locator) duplicated verbatim in all four files. Hoisted the text locator to
+`SignupPage.accountDeletedConfirmationText`, alongside the existing `accountDeletedHeading`, and updated
+all four Checkout/Orders spec files to use it — re-verified 12/12 across chromium/firefox/webkit after
+the change. The same raw-text pattern also recurs more broadly across several other already-implemented
+chunks (Account/Auth, Cart, Cross-Page Navigation); those were deliberately left untouched by this pass,
+since fixing them would require re-verifying multiple already-signed-off chunks well outside this task's
+scope — flagged here as a candidate for a future dedicated cleanup pass, not fixed now.
 
 Fully planned separately: see `specs/checkout.plan.md`.
 

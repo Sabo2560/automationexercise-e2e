@@ -79,6 +79,12 @@ export class SignupPage extends BasePage {
   // '/account_created' and '/delete_account' confirmation pages
   readonly accountCreatedHeading: Locator;
   readonly accountDeletedHeading: Locator;
+  // Paired with `accountDeletedHeading` on '/delete_account' — hoisted here once the
+  // identical raw `page.getByText('Your account has been permanently deleted!')` locator
+  // turned up duplicated verbatim across every Checkout/Orders spec file that deletes its
+  // disposable account (checkout-happy-path, checkout-login-gate, checkout-payment-validation,
+  // checkout-multi-item-total).
+  readonly accountDeletedConfirmationText: Locator;
   readonly continueButton: Locator;
 
   constructor(page: Page) {
@@ -110,6 +116,7 @@ export class SignupPage extends BasePage {
 
     this.accountCreatedHeading = page.getByRole('heading', { name: 'Account Created!' });
     this.accountDeletedHeading = page.getByRole('heading', { name: 'Account Deleted!' });
+    this.accountDeletedConfirmationText = page.getByText('Your account has been permanently deleted!');
     this.continueButton = page.getByRole('link', { name: 'Continue' });
   }
 

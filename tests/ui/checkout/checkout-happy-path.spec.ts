@@ -197,6 +197,6 @@ test.describe('Checkout / Orders', () => {
     // expect: The Delete Account flow shows the standard 'Account Deleted!' heading and 'Your account
     // has been permanently deleted!' text.
     await expect(signupPage.accountDeletedHeading).toBeVisible();
-    await expect(page.getByText('Your account has been permanently deleted!')).toBeVisible();
+    await expect(signupPage.accountDeletedConfirmationText).toBeVisible();
   });
 });

@@ -92,6 +92,6 @@ test.describe('Checkout / Orders', () => {
     // cleanup succeeds even though this account still had a non-empty, unpurchased cart at the time of
     // deletion.
     await expect(signupPage.accountDeletedHeading).toBeVisible();
-    await expect(page.getByText('Your account has been permanently deleted!')).toBeVisible();
+    await expect(signupPage.accountDeletedConfirmationText).toBeVisible();
   });
 });

@@ -35,6 +35,11 @@ export class CheckoutPage extends BasePage {
   readonly orderReviewTable: Locator;
   readonly totalAmountRow: Locator;
   readonly totalAmountValue: Locator;
+  // All product rows in the order review table at once (excludes both the header row and
+  // the 'Total Amount' summary row, since only product rows contain a product-name link).
+  // Added for Scenario 1.4 (multi-item checkout arithmetic) — Scenarios 1.1-1.3 only ever
+  // asserted against a 1-item cart and never needed to enumerate multiple product rows.
+  readonly productRows: Locator;
   readonly commentTextarea: Locator;
   // Disambiguated from CartPage.proceedToCheckoutButton (also `a.check_out`) by href;
   // the two never coexist on the same page.
@@ -68,6 +73,9 @@ export class CheckoutPage extends BasePage {
       has: page.getByRole('heading', { name: 'Total Amount' }),
     });
     this.totalAmountValue = this.totalAmountRow.locator('p');
+    this.productRows = this.orderReviewTable
+      .locator('tbody tr')
+      .filter({ has: page.locator('.cart_description h4 a') });
     this.commentTextarea = page.locator('textarea[name="message"]');
     this.placeOrderButton = page.locator('a.check_out[href="/payment"]');
 
